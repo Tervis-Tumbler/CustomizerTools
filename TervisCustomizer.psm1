@@ -186,7 +186,7 @@ WHERE CREATION_DATE>= SYSDATE - 30/(24*60)
 "@
 }
 
-functiuon Invoke-CustomizerOracleScheduledOrdersToCustomizer {
+function Invoke-CustomizerOracleScheduledOrdersToCustomizer {
 @"
 USE [customizer_db]
 GO
@@ -474,22 +474,69 @@ function New-CustomyzerPackListPurchaseRequisitionCSV {
 
 }
 
-function Get-PackListItemRecord {
+function Get-CustomyzerApprovalPackList {
 	param (
-		[Switch]$NotOnPacklist
+		[Switch]$NotOnPacklist,
+		$BatchNumber
 	)
-	$SQLCommand = @"
-		SELECT *
-		FROM Approval.PackList WITH (NOLOCK)
-"@
 
-	$SQLCommand += if ($NotOnPacklist) {
-		@"
-			WHERE 
-			Approval.PackList.BatchNumber IS NULL
+	if ($NotOnPacklist) {
+		$ArbitraryWherePredicateParameter = @{
+			ArbitraryWherePredicate = @"
+			AND Approval.PackList.BatchNumber IS NULL
 			AND Approval.PackList.SentDateUTC IS NULL
 "@
+		}
 	}
+	$PSBoundParameters.Remove("NotOnPacklist") | Out-Null
+
+	$SQLCommand = New-SQLSelect -TableName "Approval.PackList" @ArbitraryWherePredicateParameter -Parameters $PSBoundParameters
 
 	Invoke-CustomizerSQL -SQLCommand $SQLCommand
+}
+
+function Get-CustomyzerApprovalOrderDetail {
+	param(
+		[Parameter(ValueFromPipelineByPropertyName)]$OrderDetailID
+	)
+	begin {
+		$ArrayList = New-Object System.Collections.ArrayList
+	}
+	process {
+		$ArrayList.Add($OrderDetailID.Guid) | Out-Null
+	}
+	end {
+		$ParametersParameter = if ($OrderDetailID) {
+			@{
+				Parameter = @{OrderDetailID = $ArrayList}
+			}
+		} else { @{} }
+		
+		$SQLCommand = New-SQLSelect -TableName Approval.OrderDetail @ParametersParameter
+
+		Invoke-CustomizerSQL -SQLCommand $SQLCommand
+	}
+}
+
+function Get-CustomyzerProject {
+	param(
+		[Parameter(ValueFromPipelineByPropertyName)]$ProjectID
+	)
+	begin {
+		$ArrayList = New-Object System.Collections.ArrayList
+	}
+	process {
+		$ArrayList.Add($ProjectID.Guid) | Out-Null
+	}
+	end {
+		$ParametersParameter = if ($ProjectID) {
+			@{
+				Parameter = @{ProjectID = $ArrayList}
+			}
+		} else { @{} }
+		
+		$SQLCommand = New-SQLSelect -TableName Approval.OrderDetail @ParametersParameter
+
+		Invoke-CustomizerSQL -SQLCommand $SQLCommand
+	}
 }
