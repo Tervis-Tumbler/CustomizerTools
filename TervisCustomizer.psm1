@@ -1,9 +1,20 @@
-﻿function Invoke-CustomizerSQL {
+﻿$ModulePath = (Get-Module -ListAvailable TervisCustomizer).ModuleBase
+
+function Invoke-CustomizerSQL {
     param (
-        $SQLCommand
+		
+		[Parameter(Mandatory,ParameterSetName="Parameters")]$TableName,
+		[Parameter(Mandatory,ParameterSetName="Parameters")]$Parameters,
+		[Parameter(ParameterSetName="Parameters")]$ArbitraryWherePredicate,
+        [Parameter(Mandatory,ParameterSetName="SQLCommand")]$SQLCommand
     )
-    $CustomizerAccountEntry = Get-PasswordstateMSSQLDatabaseEntryDetails -PasswordID 5366
-    $CustomizerSQLCredential = Get-PasswordstateCredential -PasswordID 5366
+    $CustomizerAccountEntry = Get-PasswordstateMSSQLDatabaseEntryDetails -PasswordID 5366 | ConvertTo-MSSQLConnectionString
+	$CustomizerSQLCredential = Get-PasswordstateCredential -PasswordID 5366
+	
+	if (-not $SQLCommand) {
+		$SQLCommand = New-SQLSelect @PSBoundParameters
+	}
+
     Invoke-MSSQL -Server $CustomizerAccountEntry.Host -database $CustomizerAccountEntry.DatabaseName -sqlCommand $SQLCommand -Credential $CustomizerSQLCredential -ConvertFromDataRow
 }
 
@@ -414,6 +425,72 @@ SELECT * FROM XXTRVS.XXWIP_DISCRETE_JOBS_MIZER_STG where last_update_date is nul
 
 function Install-CustomizerPackListGeneration {
 	azurerm
-	https://www.nuget.org/packages/DocumentFormat.OpenXml/ or equivelant
 	
+	https://www.nuget.org/packages/DocumentFormat.OpenXml/ or equivelant
+	connect-azurermaccount -Subscription "Production and Infrastructure - Microsoft Azure Enterprise"
+
+}
+
+function New-CustomyzerBatchNumber {
+	(Get-Date).ToString("yyyyMMdd-HHmm")
+}
+
+function Invoke-CutomyzerPackListProcess {
+	$PackListItemsNotOnPackList = Get-PackListItem -NotOnPacklist
+	$BatchNumber = New-CustomyzerBatchNumber
+	Set-PackListItem -BatchNumber $BatchNumber
+
+	New-CustomyzerPacklist
+}
+
+function New-CustomyzerPacklistXlsx {
+	$XLSXTemplate = Get-Content -Path $ModulePath\PackListTemplate.xlsx
+
+	$ExcelFileName = "TervisPackList-$BatchNumber.xlsx"
+
+}
+
+function New-CustomyzerPackListXML {
+	param (
+		$BatchNumber,
+		$PackListItems
+	)
+	$XMLFileName = "TervisPackList-$BatchNumber.xml"
+}
+
+function New-CustomyzerPackListPurchaseRequisitionCSV {
+	param (
+		$BatchNumber,
+		$PackListItems
+	)
+	$CSVFileName = "xxmizer_reqimport_$BatchNumber.csv"
+
+	$CSVHeader = "ITEM_NUMBER",
+	"INTERFACE_SOURCECODE",
+	"SALES_ORDER_NO",
+	"SO_LINE_NO",
+	"QUANTITY",
+	"VENDOR_BATCH_NAME",
+	"SCHEDULE_NUMBER" -join "|"
+
+}
+
+function Get-PackListItemRecord {
+	param (
+		[Switch]$NotOnPacklist
+	)
+	$SQLCommand = @"
+		SELECT *
+		FROM Approval.PackList WITH (NOLOCK)
+"@
+
+	$SQLCommand += if ($NotOnPacklist) {
+		@"
+			WHERE 
+			Approval.PackList.BatchNumber IS NULL
+			AND Approval.PackList.SentDateUTC IS NULL
+"@
+	}
+
+	Invoke-CustomizerSQL -SQLCommand $SQLCommand
 }
