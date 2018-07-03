@@ -8,14 +8,13 @@ function Invoke-CustomizerSQL {
 		[Parameter(ParameterSetName="Parameters")]$ArbitraryWherePredicate,
         [Parameter(Mandatory,ParameterSetName="SQLCommand")]$SQLCommand
     )
-    $CustomizerAccountEntry = Get-PasswordstateMSSQLDatabaseEntryDetails -PasswordID 5366 | ConvertTo-MSSQLConnectionString
-	$CustomizerSQLCredential = Get-PasswordstateCredential -PasswordID 5366
+    $CustomizerConnectionString = Get-PasswordstateMSSQLDatabaseEntryDetails -PasswordID 5366 | ConvertTo-MSSQLConnectionString
 	
 	if (-not $SQLCommand) {
 		$SQLCommand = New-SQLSelect @PSBoundParameters
 	}
 
-    Invoke-MSSQL -Server $CustomizerAccountEntry.Host -database $CustomizerAccountEntry.DatabaseName -sqlCommand $SQLCommand -Credential $CustomizerSQLCredential -ConvertFromDataRow
+    Invoke-MSSQL -ConnectionString $CustomizerConnectionString -sqlCommand $SQLCommand -ConvertFromDataRow
 }
 
 function Get-CustomizerApprovalOrder {
