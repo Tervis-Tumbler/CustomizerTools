@@ -445,14 +445,9 @@ function New-CustomyzerPacklistBatch {
 
 function Invoke-CutomyzerPackListProcess {
 	$BatchNumber = New-CustomyzerPacklistBatch
-
 	#New-CustomyzerPacklist
-
 	$PackListRecords = Get-CustomyzerApprovalPackList -BatchNumber $BatchNumber
-
-
-	New-CustomyzerPacklistXlsx -BatchNumber $BatchNumber
-	
+	New-CustomyzerPacklistXlsx -BatchNumber $BatchNumber -PackListRecords $PackListRecords
 }
 
 function New-CustomyzerPacklistXlsx {
@@ -460,8 +455,6 @@ function New-CustomyzerPacklistXlsx {
 		$BatchNumber,
 		$PackListRecords
 	)
-
-	$PackListRecords = Get-CustomyzerApprovalPackList -BatchNumber $BatchNumber
 
 	$RecordToWriteToExcel = foreach ($PackListRecord in $PackListRecords) {
 		[PSCustomObject]@{
@@ -471,7 +464,7 @@ function New-CustomyzerPacklistXlsx {
 			DesignNumber = $PackListRecord.OrderDetail.ERPOrderLineNumber
 			BatchNumber = $PackListRecord.BatchNumber
 			Quantity = $PackListRecord.Quantity
-			ScheduleNumber = $PackListRecord.ScheduleNumber		
+			ScheduleNumber = $PackListRecord.ScheduleNumber
 		}
 	}
 
@@ -479,43 +472,14 @@ function New-CustomyzerPacklistXlsx {
 	Sort-Object -Property Size, FormSize, SalesOrderNumber, DesignNumber |
 	Select-Object -Property * -ExcludeProperty Size
 
-
-	$XLSXTemplate = Get-Content -Path $ModulePath\PackListTemplate.xlsx
-
-	
-
-	$Excel = Export-Excel -Path "C:\Users\cmagnuson\OneDrive - tervis\Documents\WindowsPowerShell\Modules\TervisCustomizer\PackListTemplate - Copy.xlsx" -PassThru
+	$Excel = Export-Excel -Path $ModulePath\PackListTemplate.xlsx -PassThru
 	$PackingListWorkSheet = $Excel.Workbook.Worksheets["PackingList"]
 
 	Set-CustomyzerPackListXlsxHeaderValues -PackingListWorkSheet $PackingListWorkSheet -PackListXlsxLines $RecordToWriteToExcelSorted
-
-	$FirstRowWhereContentShouldBe = 16
-	
-	$PackingListWorkSheet.DeleteRow($FirstRowWhereContentShouldBe)
-
-	$ExcelColumnLetterToPropertyNameMap = @{
-		FormSize = "A"
-		SalesOrderNumber = "C"
-		DesignNumber = "E"
-		BatchNumber = "G"
-		Quantity = "I"
-		ScheduleNumber = "P"
-	}
-
-
-	foreach($Record in $RecordToWriteToExcelSorted) {
-		$RowNumber = $RecordToWriteToExcelSorted.IndexOf($Record) + $FirstRowWhereContentShouldBe
-		$PropertyNames = $Record.psobject.Properties.name
-		
-		foreach ($PropertyName in $PropertyNames) {
-			$ColumnLetter = $ExcelColumnLetterToPropertyNameMap.$PropertyName
-			$PackingListWorkSheet.Cells["$($ColumnLetter)$RowNumber"].Value = $Record.$PropertyName
-		}
-	}
+	Set-CustomyzerPackListXlsxRowValues -PackingListWorkSheet $PackingListWorkSheet -PackListXlsxLines $RecordToWriteToExcelSorted
 
 	$ExcelFileName = "TervisPackList-$BatchNumber.xlsx"	
-	$Excel.Save()
-	Start-process "C:\Users\cmagnuson\OneDrive - tervis\Documents\WindowsPowerShell\Modules\TervisCustomizer\PackListTemplate - Copy.xlsx"
+	$Excel.SaveAs(".\$ExcelFileName")
 }
 
 function Set-CustomyzerPackListXlsxHeaderValues {
@@ -528,19 +492,6 @@ function Set-CustomyzerPackListXlsxHeaderValues {
 	$PackingListWorkSheet.Names["DownloadDate"].value = $DateTime.ToString("MM/dd/yyyy")
 	$PackingListWorkSheet.Names["DownloadTime"].value = $DateTime.ToString("hh:mm tt")
 
-	$NameToExcelCellMap = @{
-		Total6SIP = "Q3"
-		Total9SWG = "Q4"
-		Total9WINE = "Q5"
-		Total10WAV = "Q6"
-		Total16DWT = "Q7"
-		Total16MUG = "Q8"
-		Total16BEER = "Q9"
-		Total24DWT = "Q10"
-		Total24WB = "Q11"
-		GrandTotal = "Q12"
-	}
-	
 	$FormSizeQuantitySums = $PackListXlsxLines |
 	Group-Object FormSize |
 	Add-Member -MemberType ScriptProperty -Name QuantitySum -PassThru -Force -Value {
@@ -548,11 +499,45 @@ function Set-CustomyzerPackListXlsxHeaderValues {
 		Measure-Object -Property Quantity -Sum |
 		Select-Object -ExpandProperty Sum
 	} |
-	Select-Object -Property QuantitySum, Name
+	Add-Member -MemberType ScriptProperty -Name TotalName -PassThru -Force -Value {
+		"Total$($This.Name)"
+	} |
+	Select-Object -Property QuantitySum, TotalName
 
-	Foreach ($FormSizeQuantitySum in $FormSizeQuantitySums) {
-		$CellID = $NameToExcelCellMap."Total$($FormSizeQuantitySum.Name)"
-		$PackingListWorkSheet.Cells[$CellID].Value = $FormSizeQuantitySum.QuantitySum
+	foreach ($FormSizeQuantitySum in $FormSizeQuantitySums) {
+		$PackingListWorkSheet.Names[$FormSizeQuantitySum.TotalName].value = $FormSizeQuantitySum.QuantitySum
+	}
+
+	$GrandTotal = $FormSizeQuantitySums | Measure-Object -Property QuantitySum -Sum | Select-Object -ExpandProperty Sum
+	$PackingListWorkSheet.Names["GrandTotal"].Value = $GrandTotal
+}
+
+function Set-CustomyzerPackListXlsxRowValues {
+	param (
+		$PackingListWorkSheet,
+		$PackListXlsxLines
+	)
+	[int]$StartOfPackListLineDataRowNumber = $PackingListWorkSheet.Names["FirstCellOfPacklistLineData"].FullAddressAbsolute -split "\$" |
+	Select-Object -Last 1
+
+	$PropertyNameToColumnLetterMap = @{
+		FormSize = "A"
+		SalesOrderNumber = "C"
+		DesignNumber = "E"
+		BatchNumber = "G"
+		Quantity = "I"
+		ScheduleNumber = "P"
+	}
+
+	foreach($Line in $PackListXlsxLines) {
+		$RowNumber = $PackListXlsxLines.IndexOf($Line) + $StartOfPackListLineDataRowNumber
+		$PropertyNames = $Line.psobject.Properties.name
+		
+		foreach ($PropertyName in $PropertyNames) {
+			$ColumnLetter = $PropertyNameToColumnLetterMap.$PropertyName
+			$CellAddress = "$ColumnLetter$RowNumber"
+			$PackingListWorkSheet.Cells[$CellAddress].Value = $Line.$PropertyName
+		}
 	}
 }
 
