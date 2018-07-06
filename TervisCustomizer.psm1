@@ -461,10 +461,6 @@ function New-CustomyzerPacklistXlsx {
 		$PackListRecords
 	)
 
-	$XLSXTemplate = Get-Content -Path $ModulePath\PackListTemplate.xlsx
-
-	$ExcelFileName = "TervisPackList-$BatchNumber.xlsx"	
-
 	$PackListRecords = Get-CustomyzerApprovalPackList -BatchNumber $BatchNumber
 
 	$RecordToWriteToExcel = foreach ($PackListRecord in $PackListRecords) {
@@ -483,6 +479,10 @@ function New-CustomyzerPacklistXlsx {
 	Sort-Object -Property Size, FormSize, SalesOrderNumber, DesignNumber |
 	Select-Object -Property * -ExcludeProperty Size
 
+
+	$XLSXTemplate = Get-Content -Path $ModulePath\PackListTemplate.xlsx
+
+	
 
 	$Excel = Export-Excel -Path "C:\Users\cmagnuson\OneDrive - tervis\Documents\WindowsPowerShell\Modules\TervisCustomizer\PackListTemplate - Copy.xlsx" -PassThru
 	$PackingListWorkSheet = $Excel.Workbook.Worksheets["PackingList"]
@@ -513,19 +513,9 @@ function New-CustomyzerPacklistXlsx {
 		}
 	}
 
+	$ExcelFileName = "TervisPackList-$BatchNumber.xlsx"	
 	$Excel.Save()
 	Start-process "C:\Users\cmagnuson\OneDrive - tervis\Documents\WindowsPowerShell\Modules\TervisCustomizer\PackListTemplate - Copy.xlsx"
-
-
-	$RecordToWriteToExcel |
-	Sort-Object -Property Size, FormSize, SalesOrderNumber, DesignNumber |
-	Select-Object -Property * -ExcludeProperty Size |
-	Export-Excel -ExcelPackage $Excel -Show -Append -WorkSheetname PackingList -AutoFilter -NoHeader -NoClobber
-
-	#Set-row -ExcelPackage $Excel -Value "test","test2"   -Worksheetname packinglist
-	Set-row -ExcelPackage $Excel -Value "test"  -Worksheetname packinglist -StartColumn 0
-	$Excel.save()
-	Start-Process "C:\Users\cmagnuson\OneDrive - tervis\Documents\WindowsPowerShell\Modules\TervisCustomizer\PackListTemplate - Copy.xlsx"
 }
 
 function Set-CustomyzerPackListXlsxHeaderValues {
