@@ -7,14 +7,16 @@ function Invoke-CustomizerSQL {
 		[Parameter(Mandatory,ParameterSetName="Parameters")]$Parameters,
 		[Parameter(ParameterSetName="Parameters")]$ArbitraryWherePredicate,
         [Parameter(Mandatory,ParameterSetName="SQLCommand")]$SQLCommand
-    )
-    $CustomizerConnectionString = Get-PasswordstateMSSQLDatabaseEntryDetails -PasswordID 5366 | ConvertTo-MSSQLConnectionString
-	
+	)
+	if (-not $Script:CustomizerConnectionString) {
+		$Script:CustomizerConnectionString = Get-PasswordstateMSSQLDatabaseEntryDetails -PasswordID 5366 | ConvertTo-MSSQLConnectionString
+	}
+    
 	if (-not $SQLCommand) {
 		$SQLCommand = New-SQLSelect @PSBoundParameters
 	}
 
-    Invoke-MSSQL -ConnectionString $CustomizerConnectionString -sqlCommand $SQLCommand -ConvertFromDataRow
+    Invoke-MSSQL -ConnectionString $Script:CustomizerConnectionString -sqlCommand $SQLCommand -ConvertFromDataRow
 }
 
 function Get-CustomizerApprovalOrder {
@@ -443,10 +445,85 @@ function Invoke-CutomyzerPackListProcess {
 }
 
 function New-CustomyzerPacklistXlsx {
+	param (
+		$BatchNumber,
+		$PackListRecords
+	)
+
 	$XLSXTemplate = Get-Content -Path $ModulePath\PackListTemplate.xlsx
 
-	$ExcelFileName = "TervisPackList-$BatchNumber.xlsx"
+	$ExcelFileName = "TervisPackList-$BatchNumber.xlsx"	
 
+	$PackListRecords = Get-CustomyzerApprovalPackList -BatchNumber $BatchNumber
+
+	$PackListIntermediateRecords = foreach ($PackListRecord in $PackListRecords) {
+		[PSCustomObject]@{
+			ProjectID = $PackListRecord.OrderDetail.ProjectID.Guid
+			FormSize = "$($PackListRecord.OrderDetail.Project.Product.Form.Size) $($PackListRecord.OrderDetail.Project.Product.Form.FormType.ToUpper())"
+			Size = $PackListRecord.OrderDetail.Project.Product.Form.Size
+			OrderNumber = $PackListRecord.OrderDetail.Order.ERPOrderNumber
+			OrderLineNumber = $PackListRecord.OrderDetail.ERPOrderLineNumber
+			FinalArchedImageLocation = $PackListRecord.OrderDetail.Project.FinalArchedImageLocation
+			FinalFGCode = $PackListRecord.OrderDetail.Project.FinalFGCode
+			SeparatePackFlag = ($PackListRecord.OrderDetail.Order.IsSeparatePack -or $PackListRecord.ReprintID)
+		}
+	}
+
+	$PackListExcelRecords = foreach ($PackListIntermediateRecord in $PackListIntermediateRecords) {
+		[PSCustomObject]@{
+			ItemNumber = $PackListIntermediateRecord.FinalFGCode
+			Size = $PackListIntermediateRecord.Size
+			FormSize = $PackListIntermediateRecord.FormSize
+			SalesOrderNumber = $PackListIntermediateRecord.OrderNumber
+			DesignNumber = $PackListIntermediateRecord.OrderLineNumber
+			BatchNumber = $BatchNumber
+			Quantity = $PackListIntermediateRecord.Quantity #pl.Sum(x => x.Quantity).ToString(),
+			ScheduleNumber = $PackListIntermediateRecord.ScheduleNumber #pl.OrderByDescending(x => x.CreatedDateUTC).Select(x => x.ScheduleNumber).First(),
+			FileName = $PackListIntermediateRecord.FinalArchedImageLocation
+			SeparatePackFlag = $PackListIntermediateRecord.SeparatePackFlag
+		}
+	}
+	
+	$PackListExcelRecords |
+	Sort-Object -Property Size, FormSize, SalesOrderNumber, DesignNumber
+
+	$RecordToWriteToExcel = foreach ($PackListRecord in $PackListRecords) {
+		[PSCustomObject]@{
+			Size = $PackListRecord.OrderDetail.Project.Product.Form.Size
+			FormSize = "$($PackListRecord.OrderDetail.Project.Product.Form.Size)$($PackListRecord.OrderDetail.Project.Product.Form.FormType.ToUpper())"
+			SalesOrderNumber = $PackListRecord.OrderDetail.Order.ERPOrderNumber
+			DesignNumber = $PackListRecord.OrderDetail.ERPOrderLineNumber
+			BatchNumber = $PackListRecord.BatchNumber
+			Quantity = $PackListRecord.Quantity
+			ScheduleNumber = $PackListRecord.ScheduleNumber		
+		}
+	} 
+	
+	$RecordToWriteToExcel |
+	Sort-Object -Property Size, FormSize, SalesOrderNumber, DesignNumber |
+	Select-Object -Property * -ExcludeProperty Size |
+	FT *
+
+
+	#var ExcelRow = new Row() { RowIndex = rowIndex };
+	#ExcelRow.Append(new Cell() { CellReference = (sizeIndex[0].ToString() + rowIndex), DataType = CellValues.String, CellValue = new CellValue(row.FormSize) });
+	#ExcelRow.Append(new Cell() { CellReference = (soIndex[0].ToString() + rowIndex), DataType = CellValues.String, CellValue = new CellValue(row.SalesOrderNumber) });
+	#ExcelRow.Append(new Cell() { CellReference = (designNumberIndex[0].ToString() + rowIndex), DataType = CellValues.String, CellValue = new CellValue(row.DesignNumber) });
+	#ExcelRow.Append(new Cell() { CellReference = (batchNumberIndex[0].ToString() + rowIndex), DataType = CellValues.String, CellValue = new CellValue(batchNumber) });
+	#ExcelRow.Append(new Cell() { CellReference = (quantityIndex[0].ToString() + rowIndex), DataType = CellValues.String, CellValue = new CellValue(row.Quantity) });
+	#ExcelRow.Append(new Cell() { CellReference = (scheduleNumberIndex[0].ToString() + rowIndex), DataType = CellValues.String, CellValue = new CellValue(string.IsNullOrEmpty(row.ScheduleNumber) ? "" : row.ScheduleNumber) });
+	#sheetData.Append(ExcelRow);
+
+	$Excel = Export-Excel -Path "C:\Users\cmagnuson\OneDrive - tervis\Documents\WindowsPowerShell\Modules\TervisCustomizer\PackListTemplate - Copy.xlsx" -PassThru
+	$RecordToWriteToExcel |
+	Sort-Object -Property Size, FormSize, SalesOrderNumber, DesignNumber |
+	Select-Object -Property * -ExcludeProperty Size |
+	Export-Excel -ExcelPackage $Excel -Show -Append -WorkSheetname PackingList -AutoFilter -NoHeader -NoClobber
+
+	#Set-row -ExcelPackage $Excel -Value "test","test2"   -Worksheetname packinglist
+	Set-row -ExcelPackage $Excel -Value "test"  -Worksheetname packinglist -StartColumn 0
+	$Excel.save()
+	Start-Process "C:\Users\cmagnuson\OneDrive - tervis\Documents\WindowsPowerShell\Modules\TervisCustomizer\PackListTemplate - Copy.xlsx"
 }
 
 function New-CustomyzerPackListXML {
@@ -490,9 +567,13 @@ function Get-CustomyzerApprovalPackList {
 	}
 	$PSBoundParameters.Remove("NotOnPacklist") | Out-Null
 
-	$SQLCommand = New-SQLSelect -TableName "Approval.PackList" @ArbitraryWherePredicateParameter -Parameters $PSBoundParameters
+	$SQLCommand = New-SQLSelect -SchemaName Approval -TableName PackList @ArbitraryWherePredicateParameter -Parameters $PSBoundParameters
 
-	Invoke-CustomizerSQL -SQLCommand $SQLCommand
+	Invoke-CustomizerSQL -SQLCommand $SQLCommand |
+	Add-Member -MemberType ScriptProperty -Name OrderDetail -PassThru -Force -Value {
+		$This | Add-Member -MemberType NoteProperty -Name OrderDetail -Force -Value $($This | Get-CustomyzerApprovalOrderDetail)
+		$This.OrderDetail
+	}
 }
 
 function Get-CustomyzerApprovalOrderDetail {
@@ -512,9 +593,17 @@ function Get-CustomyzerApprovalOrderDetail {
 			}
 		} else { @{} }
 		
-		$SQLCommand = New-SQLSelect -TableName Approval.OrderDetail @ParametersParameter
+		$SQLCommand = New-SQLSelect -SchemaName Approval -TableName OrderDetail @ParametersParameter
 
-		Invoke-CustomizerSQL -SQLCommand $SQLCommand
+		Invoke-CustomizerSQL -SQLCommand $SQLCommand |
+		Add-Member -MemberType ScriptProperty -Name Project -Force -PassThru -Value {
+			$This | Add-Member -MemberType NoteProperty -Name Project -Force -Value $($This | Get-CustomyzerProject)
+			$This.Project
+		} |
+		Add-Member -MemberType ScriptProperty -Name Order -Force -PassThru -Value {
+			$This | Add-Member -MemberType NoteProperty -Name Order -Force -Value $($This | Get-CustomyzerApprovalOrder)
+			$This.Order
+		}
 	}
 }
 
@@ -535,8 +624,65 @@ function Get-CustomyzerProject {
 			}
 		} else { @{} }
 		
-		$SQLCommand = New-SQLSelect -TableName Approval.OrderDetail @ParametersParameter
+		$SQLCommand = New-SQLSelect -TableName Project @ParametersParameter
 
+		Invoke-CustomizerSQL -SQLCommand $SQLCommand |
+		Add-Member -MemberType ScriptProperty -Name Product -Force -PassThru -Value {
+			$This | Add-Member -MemberType NoteProperty -Name Product -Force -Value $($This | Get-CustomyzerProduct)
+			$This.Product
+		}
+	}
+}
+
+function Get-CustomyzerProduct {
+	param(
+		[Parameter(ValueFromPipelineByPropertyName)]$ProductID
+	)
+	process {
+		$SQLCommand = New-SQLSelect -TableName Product -Parameters $PSBoundParameters
+		Invoke-CustomizerSQL -SQLCommand $SQLCommand |
+		Add-Member -MemberType ScriptProperty -Name Form -Force -PassThru -Value {
+			$This | Add-Member -MemberType NoteProperty -Name Form -Force -Value $($This | Get-CustomyzerForm)
+			$This.Form
+		}
+	}
+}
+
+function Get-CustomyzerForm {
+	param(
+		[Parameter(ValueFromPipelineByPropertyName)]$FormID
+	)
+	process {
+		$SQLCommand = New-SQLSelect -TableName Form -Parameters $PSBoundParameters
 		Invoke-CustomizerSQL -SQLCommand $SQLCommand
 	}
+}
+
+function Get-CustomyzerApprovalOrder {
+	param(
+		[Parameter(ValueFromPipelineByPropertyName)]$OrderID
+	)
+	process {
+		$SQLCommand = New-SQLSelect -SchemaName Approval -TableName Order -Parameters $PSBoundParameters
+		Invoke-CustomizerSQL -SQLCommand $SQLCommand
+	}
+}
+
+function Invoke-CustomzerHelpSQL {
+
+@"	
+SELECT MAX(pl.CreatedDateUTC) AS LastScheduledItemImported, 
+MAX(pl.SentDateUTC) AS LastPackListGeneration
+FROM Approval.PackList AS pl WITH (NOLOCK)
+
+SELECT *
+FROM Approval.PackList AS pl WITH (NOLOCK)
+WHERE pl.BatchNumber IS NULL
+AND pl.sentdateutc is null
+ORDER BY pl.CreatedDateUTC DESC
+
+SELECT top 300 *
+FROM Approval.PackList AS pl WITH (NOLOCK)
+ORDER BY pl.CreatedDateUTC DESC
+"@
 }
