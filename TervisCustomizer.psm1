@@ -456,36 +456,36 @@ function New-CustomyzerPacklistXlsx {
 
 	$PackListRecords = Get-CustomyzerApprovalPackList -BatchNumber $BatchNumber
 
-	$PackListIntermediateRecords = foreach ($PackListRecord in $PackListRecords) {
-		[PSCustomObject]@{
-			ProjectID = $PackListRecord.OrderDetail.ProjectID.Guid
-			FormSize = "$($PackListRecord.OrderDetail.Project.Product.Form.Size) $($PackListRecord.OrderDetail.Project.Product.Form.FormType.ToUpper())"
-			Size = $PackListRecord.OrderDetail.Project.Product.Form.Size
-			OrderNumber = $PackListRecord.OrderDetail.Order.ERPOrderNumber
-			OrderLineNumber = $PackListRecord.OrderDetail.ERPOrderLineNumber
-			FinalArchedImageLocation = $PackListRecord.OrderDetail.Project.FinalArchedImageLocation
-			FinalFGCode = $PackListRecord.OrderDetail.Project.FinalFGCode
-			SeparatePackFlag = ($PackListRecord.OrderDetail.Order.IsSeparatePack -or $PackListRecord.ReprintID)
-		}
-	}
-
-	$PackListExcelRecords = foreach ($PackListIntermediateRecord in $PackListIntermediateRecords) {
-		[PSCustomObject]@{
-			ItemNumber = $PackListIntermediateRecord.FinalFGCode
-			Size = $PackListIntermediateRecord.Size
-			FormSize = $PackListIntermediateRecord.FormSize
-			SalesOrderNumber = $PackListIntermediateRecord.OrderNumber
-			DesignNumber = $PackListIntermediateRecord.OrderLineNumber
-			BatchNumber = $BatchNumber
-			Quantity = $PackListIntermediateRecord.Quantity #pl.Sum(x => x.Quantity).ToString(),
-			ScheduleNumber = $PackListIntermediateRecord.ScheduleNumber #pl.OrderByDescending(x => x.CreatedDateUTC).Select(x => x.ScheduleNumber).First(),
-			FileName = $PackListIntermediateRecord.FinalArchedImageLocation
-			SeparatePackFlag = $PackListIntermediateRecord.SeparatePackFlag
-		}
-	}
-	
-	$PackListExcelRecords |
-	Sort-Object -Property Size, FormSize, SalesOrderNumber, DesignNumber
+	#$PackListIntermediateRecords = foreach ($PackListRecord in $PackListRecords) {
+	#	[PSCustomObject]@{
+	#		ProjectID = $PackListRecord.OrderDetail.ProjectID.Guid
+	#		FormSize = "$($PackListRecord.OrderDetail.Project.Product.Form.Size) $($PackListRecord.OrderDetail.Project.Product.Form.FormType.ToUpper())"
+	#		Size = $PackListRecord.OrderDetail.Project.Product.Form.Size
+	#		OrderNumber = $PackListRecord.OrderDetail.Order.ERPOrderNumber
+	#		OrderLineNumber = $PackListRecord.OrderDetail.ERPOrderLineNumber
+	#		FinalArchedImageLocation = $PackListRecord.OrderDetail.Project.FinalArchedImageLocation
+	#		FinalFGCode = $PackListRecord.OrderDetail.Project.FinalFGCode
+	#		SeparatePackFlag = ($PackListRecord.OrderDetail.Order.IsSeparatePack -or $PackListRecord.ReprintID)
+	#	}
+	#}
+#
+	#$PackListExcelRecords = foreach ($PackListIntermediateRecord in $PackListIntermediateRecords) {
+	#	[PSCustomObject]@{
+	#		ItemNumber = $PackListIntermediateRecord.FinalFGCode
+	#		Size = $PackListIntermediateRecord.Size
+	#		FormSize = $PackListIntermediateRecord.FormSize
+	#		SalesOrderNumber = $PackListIntermediateRecord.OrderNumber
+	#		DesignNumber = $PackListIntermediateRecord.OrderLineNumber
+	#		BatchNumber = $BatchNumber
+	#		Quantity = $PackListIntermediateRecord.Quantity #pl.Sum(x => x.Quantity).ToString(),
+	#		ScheduleNumber = $PackListIntermediateRecord.ScheduleNumber #pl.OrderByDescending(x => x.CreatedDateUTC).Select(x => x.ScheduleNumber).First(),
+	#		FileName = $PackListIntermediateRecord.FinalArchedImageLocation
+	#		SeparatePackFlag = $PackListIntermediateRecord.SeparatePackFlag
+	#	}
+	#}
+	#
+	#$PackListExcelRecords |
+	#Sort-Object -Property Size, FormSize, SalesOrderNumber, DesignNumber
 
 	$RecordToWriteToExcel = foreach ($PackListRecord in $PackListRecords) {
 		[PSCustomObject]@{
@@ -499,10 +499,9 @@ function New-CustomyzerPacklistXlsx {
 		}
 	} 
 	
-	$RecordToWriteToExcel |
+	$RecordToWriteToExcelSorted = $RecordToWriteToExcel |
 	Sort-Object -Property Size, FormSize, SalesOrderNumber, DesignNumber |
-	Select-Object -Property * -ExcludeProperty Size |
-	FT *
+	Select-Object -Property * -ExcludeProperty Size
 
 
 	#var ExcelRow = new Row() { RowIndex = rowIndex };
@@ -514,7 +513,52 @@ function New-CustomyzerPacklistXlsx {
 	#ExcelRow.Append(new Cell() { CellReference = (scheduleNumberIndex[0].ToString() + rowIndex), DataType = CellValues.String, CellValue = new CellValue(string.IsNullOrEmpty(row.ScheduleNumber) ? "" : row.ScheduleNumber) });
 	#sheetData.Append(ExcelRow);
 
-	$Excel = Export-Excel -Path "C:\Users\cmagnuson\OneDrive - tervis\Documents\WindowsPowerShell\Modules\TervisCustomizer\PackListTemplate - Copy.xlsx" -PassThru
+	$Excel = Export-Excel -Path "C:\Users\cmagnuson\OneDrive - tervis\Documents\WindowsPowerShell\Modules\TervisCustomizer\PackListTemplate - Copy.xlsx" -PassThru #-WorkSheetname PackingList
+
+	$FirstRowWhereContentShouldBe = 16
+	$PackingListWorkSheet = $Excel.Workbook.Worksheets["PackingList"]
+	$PackingListWorkSheet.DeleteRow($FirstRowWhereContentShouldBe)
+
+	$ExcelColumnLetterToPropertyNameMap = @{
+		FormSize = "A"
+		SalesOrderNumber = "C"
+		DesignNumber = "E"
+		BatchNumber = "G"
+		Quantity = "I"
+		ScheduleNumber = "P"
+	}
+
+	$DateTime = Get-Date
+	$PackingListWorkSheet.Names["DownloadDate"].value = $DateTime.ToString("MM/dd/yyyy")
+	$PackingListWorkSheet.Names["DownloadTime"].value = $DateTime.ToString("hh:mm tt")
+
+	$ExcelCellToNameMap = @{
+		Total6SIP = "Q3"
+		Total9SWG = "Q4"
+		Total9WINE = "Q5"
+		Total10WAV = "Q6"
+		Total16DWT = "Q7"
+		Total16MUG = "Q8"
+		Total16BEER = "Q9"
+		Total24DWT = "Q10"
+		Total24WB = "Q11"
+		GrandTotal = "Q12"
+	}
+
+	foreach($Record in $RecordToWriteToExcelSorted) {
+		$RowNumber = $RecordToWriteToExcelSorted.IndexOf($Record) + $FirstRowWhereContentShouldBe
+		$PropertyNames = $Record.psobject.Properties.name
+		
+		foreach ($PropertyName in $PropertyNames) {
+			$ColumnLetter = $ExcelColumnLetterToPropertyNameMap.$PropertyName
+			$PackingListWorkSheet.Cells["$($ColumnLetter)$RowNumber"].Value = $Record.$PropertyName
+		}
+	}
+
+	$Excel.Save()
+	Start-process "C:\Users\cmagnuson\OneDrive - tervis\Documents\WindowsPowerShell\Modules\TervisCustomizer\PackListTemplate - Copy.xlsx"
+
+
 	$RecordToWriteToExcel |
 	Sort-Object -Property Size, FormSize, SalesOrderNumber, DesignNumber |
 	Select-Object -Property * -ExcludeProperty Size |
