@@ -436,12 +436,23 @@ function New-CustomyzerBatchNumber {
 	(Get-Date).ToString("yyyyMMdd-HHmm")
 }
 
-function Invoke-CutomyzerPackListProcess {
-	$PackListItemsNotOnPackList = Get-PackListItem -NotOnPacklist
+function New-CustomyzerPacklistBatch {
+	$PackListItemsNotOnPackList = Get-CustomyzerApprovalPackList -NotOnPacklist
 	$BatchNumber = New-CustomyzerBatchNumber
-	Set-PackListItem -BatchNumber $BatchNumber
+	$PackListItemsNotOnPackList | Set-CustomyzerApprovalPackList -BatchNumber $BatchNumber
+	$BatchNumber
+}
 
-	New-CustomyzerPacklist
+function Invoke-CutomyzerPackListProcess {
+	$BatchNumber = New-CustomyzerPacklistBatch
+
+	#New-CustomyzerPacklist
+
+	$PackListRecords = Get-CustomyzerApprovalPackList -BatchNumber $BatchNumber
+
+
+	New-CustomyzerPacklistXlsx -BatchNumber $BatchNumber
+	
 }
 
 function New-CustomyzerPacklistXlsx {
@@ -456,37 +467,6 @@ function New-CustomyzerPacklistXlsx {
 
 	$PackListRecords = Get-CustomyzerApprovalPackList -BatchNumber $BatchNumber
 
-	#$PackListIntermediateRecords = foreach ($PackListRecord in $PackListRecords) {
-	#	[PSCustomObject]@{
-	#		ProjectID = $PackListRecord.OrderDetail.ProjectID.Guid
-	#		FormSize = "$($PackListRecord.OrderDetail.Project.Product.Form.Size) $($PackListRecord.OrderDetail.Project.Product.Form.FormType.ToUpper())"
-	#		Size = $PackListRecord.OrderDetail.Project.Product.Form.Size
-	#		OrderNumber = $PackListRecord.OrderDetail.Order.ERPOrderNumber
-	#		OrderLineNumber = $PackListRecord.OrderDetail.ERPOrderLineNumber
-	#		FinalArchedImageLocation = $PackListRecord.OrderDetail.Project.FinalArchedImageLocation
-	#		FinalFGCode = $PackListRecord.OrderDetail.Project.FinalFGCode
-	#		SeparatePackFlag = ($PackListRecord.OrderDetail.Order.IsSeparatePack -or $PackListRecord.ReprintID)
-	#	}
-	#}
-#
-	#$PackListExcelRecords = foreach ($PackListIntermediateRecord in $PackListIntermediateRecords) {
-	#	[PSCustomObject]@{
-	#		ItemNumber = $PackListIntermediateRecord.FinalFGCode
-	#		Size = $PackListIntermediateRecord.Size
-	#		FormSize = $PackListIntermediateRecord.FormSize
-	#		SalesOrderNumber = $PackListIntermediateRecord.OrderNumber
-	#		DesignNumber = $PackListIntermediateRecord.OrderLineNumber
-	#		BatchNumber = $BatchNumber
-	#		Quantity = $PackListIntermediateRecord.Quantity #pl.Sum(x => x.Quantity).ToString(),
-	#		ScheduleNumber = $PackListIntermediateRecord.ScheduleNumber #pl.OrderByDescending(x => x.CreatedDateUTC).Select(x => x.ScheduleNumber).First(),
-	#		FileName = $PackListIntermediateRecord.FinalArchedImageLocation
-	#		SeparatePackFlag = $PackListIntermediateRecord.SeparatePackFlag
-	#	}
-	#}
-	#
-	#$PackListExcelRecords |
-	#Sort-Object -Property Size, FormSize, SalesOrderNumber, DesignNumber
-
 	$RecordToWriteToExcel = foreach ($PackListRecord in $PackListRecords) {
 		[PSCustomObject]@{
 			Size = $PackListRecord.OrderDetail.Project.Product.Form.Size
@@ -497,26 +477,20 @@ function New-CustomyzerPacklistXlsx {
 			Quantity = $PackListRecord.Quantity
 			ScheduleNumber = $PackListRecord.ScheduleNumber		
 		}
-	} 
-	
+	}
+
 	$RecordToWriteToExcelSorted = $RecordToWriteToExcel |
 	Sort-Object -Property Size, FormSize, SalesOrderNumber, DesignNumber |
 	Select-Object -Property * -ExcludeProperty Size
 
 
-	#var ExcelRow = new Row() { RowIndex = rowIndex };
-	#ExcelRow.Append(new Cell() { CellReference = (sizeIndex[0].ToString() + rowIndex), DataType = CellValues.String, CellValue = new CellValue(row.FormSize) });
-	#ExcelRow.Append(new Cell() { CellReference = (soIndex[0].ToString() + rowIndex), DataType = CellValues.String, CellValue = new CellValue(row.SalesOrderNumber) });
-	#ExcelRow.Append(new Cell() { CellReference = (designNumberIndex[0].ToString() + rowIndex), DataType = CellValues.String, CellValue = new CellValue(row.DesignNumber) });
-	#ExcelRow.Append(new Cell() { CellReference = (batchNumberIndex[0].ToString() + rowIndex), DataType = CellValues.String, CellValue = new CellValue(batchNumber) });
-	#ExcelRow.Append(new Cell() { CellReference = (quantityIndex[0].ToString() + rowIndex), DataType = CellValues.String, CellValue = new CellValue(row.Quantity) });
-	#ExcelRow.Append(new Cell() { CellReference = (scheduleNumberIndex[0].ToString() + rowIndex), DataType = CellValues.String, CellValue = new CellValue(string.IsNullOrEmpty(row.ScheduleNumber) ? "" : row.ScheduleNumber) });
-	#sheetData.Append(ExcelRow);
+	$Excel = Export-Excel -Path "C:\Users\cmagnuson\OneDrive - tervis\Documents\WindowsPowerShell\Modules\TervisCustomizer\PackListTemplate - Copy.xlsx" -PassThru
+	$PackingListWorkSheet = $Excel.Workbook.Worksheets["PackingList"]
 
-	$Excel = Export-Excel -Path "C:\Users\cmagnuson\OneDrive - tervis\Documents\WindowsPowerShell\Modules\TervisCustomizer\PackListTemplate - Copy.xlsx" -PassThru #-WorkSheetname PackingList
+	Set-CustomyzerPackListXlsxHeaderValues -PackingListWorkSheet $PackingListWorkSheet -PackListXlsxLines $RecordToWriteToExcelSorted
 
 	$FirstRowWhereContentShouldBe = 16
-	$PackingListWorkSheet = $Excel.Workbook.Worksheets["PackingList"]
+	
 	$PackingListWorkSheet.DeleteRow($FirstRowWhereContentShouldBe)
 
 	$ExcelColumnLetterToPropertyNameMap = @{
@@ -528,22 +502,6 @@ function New-CustomyzerPacklistXlsx {
 		ScheduleNumber = "P"
 	}
 
-	$DateTime = Get-Date
-	$PackingListWorkSheet.Names["DownloadDate"].value = $DateTime.ToString("MM/dd/yyyy")
-	$PackingListWorkSheet.Names["DownloadTime"].value = $DateTime.ToString("hh:mm tt")
-
-	$ExcelCellToNameMap = @{
-		Total6SIP = "Q3"
-		Total9SWG = "Q4"
-		Total9WINE = "Q5"
-		Total10WAV = "Q6"
-		Total16DWT = "Q7"
-		Total16MUG = "Q8"
-		Total16BEER = "Q9"
-		Total24DWT = "Q10"
-		Total24WB = "Q11"
-		GrandTotal = "Q12"
-	}
 
 	foreach($Record in $RecordToWriteToExcelSorted) {
 		$RowNumber = $RecordToWriteToExcelSorted.IndexOf($Record) + $FirstRowWhereContentShouldBe
@@ -568,6 +526,44 @@ function New-CustomyzerPacklistXlsx {
 	Set-row -ExcelPackage $Excel -Value "test"  -Worksheetname packinglist -StartColumn 0
 	$Excel.save()
 	Start-Process "C:\Users\cmagnuson\OneDrive - tervis\Documents\WindowsPowerShell\Modules\TervisCustomizer\PackListTemplate - Copy.xlsx"
+}
+
+function Set-CustomyzerPackListXlsxHeaderValues {
+	param (
+		$PackingListWorkSheet,
+		$PackListXlsxLines
+	)
+	
+	$DateTime = Get-Date
+	$PackingListWorkSheet.Names["DownloadDate"].value = $DateTime.ToString("MM/dd/yyyy")
+	$PackingListWorkSheet.Names["DownloadTime"].value = $DateTime.ToString("hh:mm tt")
+
+	$NameToExcelCellMap = @{
+		Total6SIP = "Q3"
+		Total9SWG = "Q4"
+		Total9WINE = "Q5"
+		Total10WAV = "Q6"
+		Total16DWT = "Q7"
+		Total16MUG = "Q8"
+		Total16BEER = "Q9"
+		Total24DWT = "Q10"
+		Total24WB = "Q11"
+		GrandTotal = "Q12"
+	}
+	
+	$FormSizeQuantitySums = $PackListXlsxLines |
+	Group-Object FormSize |
+	Add-Member -MemberType ScriptProperty -Name QuantitySum -PassThru -Force -Value {
+		$This.Group |
+		Measure-Object -Property Quantity -Sum |
+		Select-Object -ExpandProperty Sum
+	} |
+	Select-Object -Property QuantitySum, Name
+
+	Foreach ($FormSizeQuantitySum in $FormSizeQuantitySums) {
+		$CellID = $NameToExcelCellMap."Total$($FormSizeQuantitySum.Name)"
+		$PackingListWorkSheet.Cells[$CellID].Value = $FormSizeQuantitySum.QuantitySum
+	}
 }
 
 function New-CustomyzerPackListXML {
