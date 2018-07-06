@@ -447,7 +447,14 @@ function Invoke-CutomyzerPackListProcess {
 	$BatchNumber = New-CustomyzerPacklistBatch
 	#New-CustomyzerPacklist
 	$PackListRecords = Get-CustomyzerApprovalPackList -BatchNumber $BatchNumber
-	New-CustomyzerPacklistXlsx -BatchNumber $BatchNumber -PackListRecords $PackListRecords
+
+	$PackListRecordsSorted = $PackListRecords |
+	Sort-Object -Property {$_.OrderDetail.Project.Product.Form.Size},
+		{"$($_.OrderDetail.Project.Product.Form.Size)$($_.OrderDetail.Project.Product.Form.FormType.ToUpper())"},
+		{$_.OrderDetail.Order.ERPOrderNumber},
+		{$_.OrderDetail.ERPOrderLineNumber}
+
+	New-CustomyzerPacklistXlsx -BatchNumber $BatchNumber -PackListRecords $PackListRecordsSorted
 }
 
 function New-CustomyzerPacklistXlsx {
@@ -552,7 +559,7 @@ function New-CustomyzerPackListXML {
 function New-CustomyzerPackListPurchaseRequisitionCSV {
 	param (
 		$BatchNumber,
-		$PackListItems
+		$PackListRecords
 	)
 	$CSVFileName = "xxmizer_reqimport_$BatchNumber.csv"
 
@@ -563,7 +570,19 @@ function New-CustomyzerPackListPurchaseRequisitionCSV {
 	"QUANTITY",
 	"VENDOR_BATCH_NAME",
 	"SCHEDULE_NUMBER" -join "|"
-
+	
+	$RecordToWriteToCSV = foreach ($PackListRecord in $PackListRecords) {
+		[PSCustomObject]@{
+			ITEM_NUMBER = $PackListRecord.OrderDetail.Project.FinalFGCode
+			INTERFACE_SOURCECODE = "MIZER_REQ_IMPORT"
+			SALES_ORDER_NO = $PackListRecord.OrderDetail.Order.ERPOrderNumber
+			SO_LINE_NO =$PackListRecord.OrderDetail.ERPOrderLineNumber
+			QUANTITY = $PackListRecord.Quantity			
+			VENDOR_BATCH_NAME = $PackListRecord.BatchNumber
+			SCHEDULE_NUMBER = $PackListRecord.ScheduleNumber
+			
+		}
+	}
 }
 
 function Get-CustomyzerApprovalPackList {
