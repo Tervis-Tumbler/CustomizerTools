@@ -1,6 +1,6 @@
 ipmo -force powershellorm,terviscustomizer
 $PackListLines = Get-CustomyzerApprovalPackList -BatchNumber 20180702-1300
-"20180628-1300"
+$BatchNumber = "20180628-1300"
 
 $OrderDetailRecords = $PackListLines | Get-CustomyzerApprovalOrderDetail
 $PackListLines.orderdetail | Out-Null
