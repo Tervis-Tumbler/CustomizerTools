@@ -465,7 +465,6 @@ function New-CustomyzerPacklistXlsx {
 
 	$RecordToWriteToExcel = foreach ($PackListRecord in $PackListRecords) {
 		[PSCustomObject]@{
-			Size = $PackListRecord.OrderDetail.Project.Product.Form.Size
 			FormSize = "$($PackListRecord.OrderDetail.Project.Product.Form.Size)$($PackListRecord.OrderDetail.Project.Product.Form.FormType.ToUpper())"
 			SalesOrderNumber = $PackListRecord.OrderDetail.Order.ERPOrderNumber
 			DesignNumber = $PackListRecord.OrderDetail.ERPOrderLineNumber
@@ -475,15 +474,11 @@ function New-CustomyzerPacklistXlsx {
 		}
 	}
 
-	$RecordToWriteToExcelSorted = $RecordToWriteToExcel |
-	Sort-Object -Property Size, FormSize, SalesOrderNumber, DesignNumber |
-	Select-Object -Property * -ExcludeProperty Size
-
 	$Excel = Export-Excel -Path $ModulePath\PackListTemplate.xlsx -PassThru
 	$PackingListWorkSheet = $Excel.Workbook.Worksheets["PackingList"]
 
-	Set-CustomyzerPackListXlsxHeaderValues -PackingListWorkSheet $PackingListWorkSheet -PackListXlsxLines $RecordToWriteToExcelSorted
-	Set-CustomyzerPackListXlsxRowValues -PackingListWorkSheet $PackingListWorkSheet -PackListXlsxLines $RecordToWriteToExcelSorted
+	Set-CustomyzerPackListXlsxHeaderValues -PackingListWorkSheet $PackingListWorkSheet -PackListXlsxLines $RecordToWriteToExcel
+	Set-CustomyzerPackListXlsxRowValues -PackingListWorkSheet $PackingListWorkSheet -PackListXlsxLines $RecordToWriteToExcel
 
 	$ExcelFileName = "TervisPackList-$BatchNumber.xlsx"	
 	$Excel.SaveAs(".\$ExcelFileName")
@@ -561,16 +556,7 @@ function New-CustomyzerPackListPurchaseRequisitionCSV {
 		$BatchNumber,
 		$PackListRecords
 	)
-	$CSVFileName = "xxmizer_reqimport_$BatchNumber.csv"
 
-	$CSVHeader = "ITEM_NUMBER",
-	"INTERFACE_SOURCECODE",
-	"SALES_ORDER_NO",
-	"SO_LINE_NO",
-	"QUANTITY",
-	"VENDOR_BATCH_NAME",
-	"SCHEDULE_NUMBER" -join "|"
-	
 	$RecordToWriteToCSV = foreach ($PackListRecord in $PackListRecords) {
 		[PSCustomObject]@{
 			ITEM_NUMBER = $PackListRecord.OrderDetail.Project.FinalFGCode
@@ -580,9 +566,29 @@ function New-CustomyzerPackListPurchaseRequisitionCSV {
 			QUANTITY = $PackListRecord.Quantity			
 			VENDOR_BATCH_NAME = $PackListRecord.BatchNumber
 			SCHEDULE_NUMBER = $PackListRecord.ScheduleNumber
-			
 		}
 	}
+
+	$CSVFileName = "xxmizer_reqimport_$BatchNumber.csv"
+
+	#This should be the simple way to accomplish what is needed but we need to confirm that whatever
+	#consumes this CSV can handle the values between the delimiter being in "" as currently they are not
+	#$RecordToWriteToCSV |
+	#ConvertTo-Csv -Delimiter "|" -NoTypeInformation |
+	#Out-File -Encoding ascii -FilePath .\$CSVFileName -Force
+	
+	$CSVHeader = "ITEM_NUMBER",
+	"INTERFACE_SOURCECODE",
+	"SALES_ORDER_NO",
+	"SO_LINE_NO",
+	"QUANTITY",
+	"VENDOR_BATCH_NAME",
+	"SCHEDULE_NUMBER" -join "|"
+	
+	$CSVRows = $RecordToWriteToCSV | 
+	ForEach-Object { $_.psobject.Properties.value -join "|" }
+	
+	$CSVHeader,$CSVRows | Out-File -Encoding ascii -FilePath .\$CSVFileName
 }
 
 function Get-CustomyzerApprovalPackList {
