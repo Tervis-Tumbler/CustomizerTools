@@ -546,9 +546,52 @@ function Set-CustomyzerPackListXlsxRowValues {
 function New-CustomyzerPackListXML {
 	param (
 		$BatchNumber,
-		$PackListItems
+		$PackListRecords
 	)
 	$XMLFileName = "TervisPackList-$BatchNumber.xml"
+	$DateTime = Get-Date
+
+	New-XMLDocument -AsString -InnerElements {
+		New-XMLElement -Name packlist -InnerElements {
+			New-XMLElement -Name batchNumber -InnerText $BatchNumber
+			New-XMLElement -Name batchDate -InnerText $DateTime.ToString("MM/dd/yyyy")
+			New-XMLElement -Name batchTime -InnerText $DateTime.ToString("hh:mm tt")
+			New-XMLElement -Name orders -InnerElements {
+				foreach ($PackListRecord in $PackListRecords) {
+					New-XMLElement -Name order -InnerElements {
+						New-XMLElement -Name salesOrderNumber -InnerText $PackListRecord.OrderDetail.Order.ERPOrderNumber
+						New-XMLElement -Name salesLineNumber -InnerText $PackListRecord.OrderDetail.ERPOrderLineNumber
+						New-XMLElement -Name itemQuantity -InnerText $PackListRecord.Quantity
+						New-XMLElement -Name size -InnerText "$($PackListRecord.OrderDetail.Project.Product.Form.Size)$($PackListRecord.OrderDetail.Project.Product.Form.FormType.ToUpper())"
+						New-XMLElement -Name itemNumber -InnerText $PackListRecord.OrderDetail.Project.FinalFGCode
+						New-XMLElement -Name scheduleNumber -InnerText $PackListRecord.ScheduleNumber
+						New-XMLElement -Name fileName -InnerText ( New-XMLCDATA -Value )
+					}
+				}
+			}
+		}
+	}
+
+
+#	var orderXML = new XElement("packList",
+#	new XElement("batchNumber", batchNumber),
+#	   new XElement("batchDate", creationDate.ToString(ConfigurationManager.AppSettings["DateFormat"].ToString())),
+#		new XElement("batchTime", creationDate.ToString("hh:mm tt")),
+#		 new XElement("orders",
+#from row in packListSpreadsheet.SpreadsheetRows
+#select
+# new XElement("order",
+#	 new XElement("salesOrderNumber", row.SalesOrderNumber),
+#		 new XElement("salesLineNumber", row.DesignNumber),
+#		 new XElement("itemQuantity", row.Quantity),
+#		 new XElement("size", row.FormSize),
+#		 new XElement("itemNumber", row.ItemNumber),
+#		 new XElement("scheduleNumber", row.ScheduleNumber),
+#		 new XElement("fileName", new XCData(row.FileName))
+#)));
+#
+#_log.Debug("XML file generated for batch: " + batchNumber);
+#return orderXML.ToString();
 }
 
 function New-CustomyzerPackListPurchaseRequisitionCSV {
