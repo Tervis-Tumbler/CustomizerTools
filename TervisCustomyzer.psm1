@@ -445,26 +445,52 @@ function New-CustomyzerPacklistBatch {
 
 function Invoke-CutomyzerPackListProcess {
 	$BatchNumber = New-CustomyzerPacklistBatch
-	$PackListLines = Get-CustomyzerApprovalPackList -BatchNumber $BatchNumber |
-	Add-Member -Force -MemberType ScriptProperty -Name SizeAndFormType -PassThru -Value {
-		"$($This.OrderDetail.Project.Product.Form.Size)$($This.OrderDetail.Project.Product.Form.FormType.ToUpper())"
+	Invoke-CustomyzerPackListDocumentsGenerate -BatchNumber $BatchNumber
+}
+
+function Invoke-CustomyzerPackListDocumentsGenerate {
+	param (
+		[Parameter(Mandatory)]$BatchNumber
+	)
+	$PackListLines = Get-CustomyzerApprovalPackList -BatchNumber $BatchNumber
+	$PackListLinesSorted = Invoke-CustomyzerPackListLinesSort -PackListLines $PackListLines
+	$CustomyzerPackListTemporaryFolder = New-CustomyzerPackListTemporaryFolder -BatchNumber $BatchNumber
+
+	$Parameters = @{
+		BatchNumber = $BatchNumber
+		PackListLines = $PackListLinesSorted
+		Path = $CustomyzerPackListTemporaryFolder.FullName		
 	}
 
-	$PackListLinesSorted = $PackListLines |
+	New-CustomyzerPacklistXlsx @Parameters
+	New-CustomyzerPurchaseRequisitionCSV @Parameters
+	New-CustomyzerPackListXML @Parameters
+}
+
+function New-CustomyzerPackListTemporaryFolder {
+	param (
+		[Parameter(Mandatory)]$BatchNumber
+	)
+	Remove-Item -Path $TemporaryFolderPath -Force -Recurse -ErrorAction SilentlyContinue
+	New-Item -ItemType Directory -Path $TemporaryFolderPath -Force
+}
+
+function Invoke-CustomyzerPackListLinesSort {
+	param (
+		[Parameter(Mandatory)]$PackListLines
+	)
+	$PackListLines |
 	Sort-Object -Property {$_.OrderDetail.Project.Product.Form.Size},
 		{$_.SizeAndFormType},
 		{$_.OrderDetail.Order.ERPOrderNumber},
 		{$_.OrderDetail.ERPOrderLineNumber}
-
-	New-CustomyzerPacklistXlsx -BatchNumber $BatchNumber -PackListLines $PackListLinesSorted
-	New-CustomyzerPurchaseRequisitionCSV -BatchNumber $BatchNumber -PackListLines $PackListLinesSorted
-	New-CustomyzerPackListXML -BatchNumber $BatchNumber -PackListLines $PackListLinesSorted
 }
 
 function New-CustomyzerPacklistXlsx {
 	param (
-		$BatchNumber,
-		$PackListLines
+		[Parameter(Mandatory)]$BatchNumber,
+		[Parameter(Mandatory)]$PackListLines,
+		[Parameter(Mandatory)]$Path
 	)
 
 	$RecordToWriteToExcel = foreach ($PackListLine in $PackListLines) {
@@ -485,13 +511,13 @@ function New-CustomyzerPacklistXlsx {
 	Set-CustomyzerPackListXlsxRowValues -PackingListWorkSheet $PackingListWorkSheet -PackListXlsxLines $RecordToWriteToExcel
 
 	$ExcelFileName = "TervisPackList-$BatchNumber.xlsx"	
-	$Excel.SaveAs(".\$ExcelFileName")
+	$Excel.SaveAs("$Path\$ExcelFileName")
 }
 
 function Set-CustomyzerPackListXlsxHeaderValues {
 	param (
-		$PackingListWorkSheet,
-		$PackListXlsxLines
+		[Parameter(Mandatory)]$PackingListWorkSheet,
+		[Parameter(Mandatory)]$PackListXlsxLines
 	)
 	
 	$DateTime = Get-Date
@@ -520,8 +546,8 @@ function Set-CustomyzerPackListXlsxHeaderValues {
 
 function Set-CustomyzerPackListXlsxRowValues {
 	param (
-		$PackingListWorkSheet,
-		$PackListXlsxLines
+		[Parameter(Mandatory)]$PackingListWorkSheet,
+		[Parameter(Mandatory)]$PackListXlsxLines
 	)
 	[int]$StartOfPackListLineDataRowNumber = $PackingListWorkSheet.Names["FirstCellOfPacklistLineData"].FullAddressAbsolute -split "\$" |
 	Select-Object -Last 1
@@ -549,12 +575,13 @@ function Set-CustomyzerPackListXlsxRowValues {
 
 function New-CustomyzerPackListXML {
 	param (
-		$BatchNumber,
-		$PackListLines
+		[Parameter(Mandatory)]$BatchNumber,
+		[Parameter(Mandatory)]$PackListLines,
+		[Parameter(Mandatory)]$Path
 	)
 	$DateTime = Get-Date
 
-	New-XMLDocument -AsString -InnerElements {
+	$XMLContent = New-XMLDocument -AsString -InnerElements {
 		New-XMLElement -Name packList -InnerElements {
 			New-XMLElement -Name batchNumber -InnerText $BatchNumber
 			New-XMLElement -Name batchDate -InnerText $DateTime.ToString("MM/dd/yyyy")
@@ -576,13 +603,14 @@ function New-CustomyzerPackListXML {
 	}
 
 	$XMLFileName = "TervisPackList-$BatchNumber.xml"
-	Out-File -FilePath .\$XMLFileName -Encoding ascii -Force
+	$XMLContent | Out-File -FilePath $Path\$XMLFileName -Encoding ascii
 }
 
 function New-CustomyzerPurchaseRequisitionCSV {
 	param (
-		$BatchNumber,
-		$PackListLines
+		[Parameter(Mandatory)]$BatchNumber,
+		[Parameter(Mandatory)]$PackListLines,
+		[Parameter(Mandatory)]$Path
 	)
 
 	$RecordToWriteToCSV = foreach ($PackListLine in $PackListLines) {
@@ -616,7 +644,7 @@ function New-CustomyzerPurchaseRequisitionCSV {
 	$CSVRows = $RecordToWriteToCSV | 
 	ForEach-Object { $_.psobject.Properties.value -join "|" }
 	
-	$CSVHeader,$CSVRows | Out-File -Encoding ascii -FilePath .\$CSVFileName
+	$CSVHeader,$CSVRows | Out-File -Encoding ascii -FilePath $Path\$CSVFileName
 }
 
 function Get-CustomyzerApprovalPackList {
@@ -641,6 +669,9 @@ function Get-CustomyzerApprovalPackList {
 	Add-Member -MemberType ScriptProperty -Name OrderDetail -PassThru -Force -Value {
 		$This | Add-Member -MemberType NoteProperty -Name OrderDetail -Force -Value $($This | Get-CustomyzerApprovalOrderDetail)
 		$This.OrderDetail
+	} |
+	Add-Member -Force -MemberType ScriptProperty -Name SizeAndFormType -PassThru -Value {
+		"$($This.OrderDetail.Project.Product.Form.Size)$($This.OrderDetail.Project.Product.Form.FormType.ToUpper())"
 	}
 }
 
@@ -756,5 +787,14 @@ ORDER BY pl.CreatedDateUTC DESC
 }
 
 function Install-CustomyzerPackListGenerationApplication {
+
+	Write-Output ("Moving PRD-Mizer to SGS Production")
+	Copy-Item \\mizerftp.tervis.com\MizerFTP\RPD-MizerFTP\Inbound\PackLists\*.xml  \\mizerftp.tervis.com\MizerFTP\PRD-MizerFTP\Inbound\PackLists\Archive -force
+	Copy-Item \\mizerftp.tervis.com\MizerFTP\RPD-MizerFTP\Inbound\PackLists\*.xlsx \\mizerftp.tervis.com\MizerFTP\PRD-MizerFTP\Inbound\PackLists\Archive -force
+	Move-Item \\mizerftp.tervis.com\MizerFTP\PRD-MizerFTP\Inbound\PackLists\*.xml  "\\sgs-tervis-mt\User Mailboxes\SGS-NOKOMIS\To Send" -force
+	Move-Item \\mizerftp.tervis.com\MizerFTP\PRD-MizerFTP\Inbound\PackLists\*.xlsx "\\sgs-tervis-mt\User Mailboxes\SGS-NOKOMIS\To Send" -force
+
+	$Node = Get-TervisApplicationNode -ApplicationName ScheduledTasks
+	$Node | Install-PowerShellApplication -RepetitionIntervalName EverWorkdayAt1PM -
 
 }
