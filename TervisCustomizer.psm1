@@ -1,6 +1,6 @@
-﻿$ModulePath = (Get-Module -ListAvailable TervisCustomizer).ModuleBase
+﻿$ModulePath = (Get-Module -ListAvailable TervisCustomyzer).ModuleBase
 
-function Invoke-CustomizerSQL {
+function Invoke-CustomyzerSQL {
     param (
 		
 		[Parameter(Mandatory,ParameterSetName="Parameters")]$TableName,
@@ -8,30 +8,30 @@ function Invoke-CustomizerSQL {
 		[Parameter(ParameterSetName="Parameters")]$ArbitraryWherePredicate,
         [Parameter(Mandatory,ParameterSetName="SQLCommand")]$SQLCommand
 	)
-	if (-not $Script:CustomizerConnectionString) {
-		$Script:CustomizerConnectionString = Get-PasswordstateMSSQLDatabaseEntryDetails -PasswordID 5366 | ConvertTo-MSSQLConnectionString
+	if (-not $Script:CustomyzerConnectionString) {
+		$Script:CustomyzerConnectionString = Get-PasswordstateMSSQLDatabaseEntryDetails -PasswordID 5366 | ConvertTo-MSSQLConnectionString
 	}
     
 	if (-not $SQLCommand) {
 		$SQLCommand = New-SQLSelect @PSBoundParameters
 	}
 
-    Invoke-MSSQL -ConnectionString $Script:CustomizerConnectionString -sqlCommand $SQLCommand -ConvertFromDataRow
+    Invoke-MSSQL -ConnectionString $Script:CustomyzerConnectionString -sqlCommand $SQLCommand -ConvertFromDataRow
 }
 
-function Get-CustomizerApprovalOrder {
+function Get-CustomyzerApprovalOrder {
     param (
         $ERPOrderNumber
     )
-    Invoke-CustomizerSQL -SQLCommand @"
+    Invoke-CustomyzerSQL -SQLCommand @"
 Select *
 From [Approval].[Order] With (NoLock)
 Where [ERPOrderNumber] in ('$ERPOrderNumber')
 "@
 }
 
-function Get-CustomizerApprovalReviewEventLogLast10InStatusID10 {
-    Invoke-CustomizerSQL -SQLCommand @"
+function Get-CustomyzerApprovalReviewEventLogLast10InStatusID10 {
+    Invoke-CustomyzerSQL -SQLCommand @"
 Select top 10 *
 From Approval.ReviewEventLog With (NoLock)
 Where StatusID = 10
@@ -39,8 +39,8 @@ order by EventDateUTC desc
 "@
 }
 
-function Get-CustomizerApprovalOrderLast10InStatusID10 {
-    Invoke-CustomizerSQL -SQLCommand @"
+function Get-CustomyzerApprovalOrderLast10InStatusID10 {
+    Invoke-CustomyzerSQL -SQLCommand @"
 Select top 10 *
 From [Approval].[Order] With (NoLock)
 Where StatusID = 10
@@ -48,11 +48,11 @@ order by [Approval].[Order].[SubmitDateUTC] desc
 "@
 }
 
-function Get-CustomizerApprovalOrderDetail {
+function Get-CustomyzerApprovalOrderDetail {
     param (
         $ERPOrderNumber
     )
-    Invoke-CustomizerSQL -SQLCommand @"
+    Invoke-CustomyzerSQL -SQLCommand @"
 Select *
 From [Approval].[Order] With (NoLock)
 Join [Approval].[OrderDetail] With (NoLock)
@@ -61,21 +61,21 @@ Where [Approval].[Order].[ERPOrderNumber] in ('$ERPOrderNumber')
 "@
 }
 
-function Get-CustomizerIntegrationsOrdersFromEBS {
+function Get-CustomyzerIntegrationsOrdersFromEBS {
     param (
         $ERPOrderNumber
     )
-    Invoke-CustomizerSQL -SQLCommand @"
+    Invoke-CustomyzerSQL -SQLCommand @"
 Select * from Integrations.OrdersFromEBS where ERPOrderNumber = '$ERPOrderNumber'
 "@
 }
 
-function Get-CustomizerOrderNumberInIntegrations.ScheduledOrdersFromEBS {
+function Get-CustomyzerOrderNumberInIntegrations.ScheduledOrdersFromEBS {
     param (
         [DateTime]$DateTimeAfterWhichOrderShouldBeFound,
         [DateTime]$DateTimeBeforeWhichOrderShouldBeFound
     )
-    $XMLDocuments = Invoke-CustomizerSQL -SQLCommand @"
+    $XMLDocuments = Invoke-CustomyzerSQL -SQLCommand @"
 Select InputXMLPayload 
 From integrations.scheduledOrdersFromEBS With (NoLock)
 Where LastSyncedDateTime < '$(($DateTimeAfterWhichOrderShouldBeFound).ToString("yyyy-MM-dd"))'
@@ -83,8 +83,8 @@ Where LastSyncedDateTime < '$(($DateTimeAfterWhichOrderShouldBeFound).ToString("
     
 }
 
-function Get-CustomizerSQLSession {
-    Invoke-CustomizerSQL -SQLCommand @"
+function Get-CustomyzerSQLSession {
+    Invoke-CustomyzerSQL -SQLCommand @"
 SELECT
     c.session_id, c.net_transport, c.encrypt_option,
     s.status,
@@ -102,12 +102,12 @@ ORDER BY c.connect_time ASC
 "@
 }
 
-function Remove-CustomizerSQLSession {
+function Remove-CustomyzerSQLSession {
     param (
         [Parameter(Mandatory)]$SessionFromComputerName,
         [Parameter(Mandatory)]$ProgramName
     )
-    Invoke-CustomizerSQL -SQLCommand @"
+    Invoke-CustomyzerSQL -SQLCommand @"
 DECLARE @kill varchar(8000) = '';
 
 SELECT @kill = @kill + 'KILL ' + CONVERT(varchar(5), c.session_id) + ';'
@@ -123,11 +123,11 @@ SELECT @kill as varchar
 "@
 }
 
-function Get-CustomizerInIntegrations.ScheduledOrdersFromEBSPropertiesOfXMLDocument {
+function Get-CustomyzerInIntegrations.ScheduledOrdersFromEBSPropertiesOfXMLDocument {
     param (
         [Parameter(Mandatory)]$ID
     )
-    Invoke-CustomizerSQL -SQLCommand @"
+    Invoke-CustomyzerSQL -SQLCommand @"
 BEGIN TRANSACTION	
 declare @ScheduledOrdersData xml 
 set @ScheduledOrdersData = (select InputXMLPayload from integrations.scheduledOrdersFromEBS With (NoLock) where ID = '$ID')
@@ -155,27 +155,27 @@ Commit TRANSACTION
 "@
 }
 
-function Get-CustomizerIntegrations.ScheduledOrdersFromEBSTop100MostRecent {
-    Invoke-CustomizerSQL -SQLCommand @"
+function Get-CustomyzerIntegrations.ScheduledOrdersFromEBSTop100MostRecent {
+    Invoke-CustomyzerSQL -SQLCommand @"
 select top 100 * from integrations.scheduledOrdersFromEBS With (NoLock)
 order by LastSyncedDateTime Desc 
 "@
 }
 
-function Get-CustomizerIntegrationsIntegrationStatus {
-    Invoke-CustomizerSQL -SQLCommand @"
+function Get-CustomyzerIntegrationsIntegrationStatus {
+    Invoke-CustomyzerSQL -SQLCommand @"
 SELECT *
   FROM [Integrations].[IntegrationStatus] With (NoLock)
 "@
 }
 
-function Test-CustomizerOracleScheduledOrdersAvailable {
+function Test-CustomyzerOracleScheduledOrdersAvailable {
 @"
 SELECT COUNT(*) FROM XXTRVS.XXWIP_DISCRETE_JOBS_MIZER_STG WHERE CREATION_DATE>= SYSDATE - 30/(24*60)
 "@
 }
 
-function Get-CustomizerOracleScheduledOrders {
+function Get-CustomyzerOracleScheduledOrders {
 @"
 SELECT 
 SALES_ORDER_NUMBER, 
@@ -188,7 +188,7 @@ WHERE CREATION_DATE>= SYSDATE - 30/(24*60)
 "@
 }
 
-function Invoke-CustomizerOracleScheduledOrdersToCustomizer {
+function Invoke-CustomyzerOracleScheduledOrdersToCustomyzer {
 @"
 USE [customizer_db]
 GO
@@ -378,7 +378,7 @@ GO
 "@
 }
 
-function Get-CustomizerOracleDiagnosticQueries {
+function Get-CustomyzerOracleDiagnosticQueries {
 @"
 SELECT COUNT(*) FROM XXTRVS.XXWIP_DISCRETE_JOBS_MIZER_STG WHERE CREATION_DATE>= SYSDATE - 30/(24*60)
 
@@ -424,7 +424,7 @@ SELECT * FROM XXTRVS.XXWIP_DISCRETE_JOBS_MIZER_STG where last_update_date is nul
 "@
 }
 
-function Install-CustomizerPackListGeneration {
+function Install-CustomyzerPackListGeneration {
 	azurerm
 	
 	https://www.nuget.org/packages/DocumentFormat.OpenXml/ or equivelant
@@ -457,7 +457,7 @@ function Invoke-CutomyzerPackListProcess {
 		{$_.OrderDetail.ERPOrderLineNumber}
 
 	New-CustomyzerPacklistXlsx -BatchNumber $BatchNumber -PackListLines $PackListLinesSorted
-	New-CustomyzerPackListPurchaseRequisitionCSV -BatchNumber $BatchNumber -PackListLines $PackListLinesSorted
+	New-CustomyzerPurchaseRequisitionCSV -BatchNumber $BatchNumber -PackListLines $PackListLinesSorted
 	New-CustomyzerPackListXML -BatchNumber $BatchNumber -PackListLines $PackListLinesSorted
 }
 
@@ -579,7 +579,7 @@ function New-CustomyzerPackListXML {
 	Out-File -FilePath .\$XMLFileName -Encoding ascii -Force
 }
 
-function New-CustomyzerPackListPurchaseRequisitionCSV {
+function New-CustomyzerPurchaseRequisitionCSV {
 	param (
 		$BatchNumber,
 		$PackListLines
@@ -637,7 +637,7 @@ function Get-CustomyzerApprovalPackList {
 
 	$SQLCommand = New-SQLSelect -SchemaName Approval -TableName PackList @ArbitraryWherePredicateParameter -Parameters $PSBoundParameters
 
-	Invoke-CustomizerSQL -SQLCommand $SQLCommand |
+	Invoke-CustomyzerSQL -SQLCommand $SQLCommand |
 	Add-Member -MemberType ScriptProperty -Name OrderDetail -PassThru -Force -Value {
 		$This | Add-Member -MemberType NoteProperty -Name OrderDetail -Force -Value $($This | Get-CustomyzerApprovalOrderDetail)
 		$This.OrderDetail
@@ -663,7 +663,7 @@ function Get-CustomyzerApprovalOrderDetail {
 		
 		$SQLCommand = New-SQLSelect -SchemaName Approval -TableName OrderDetail @ParametersParameter
 
-		Invoke-CustomizerSQL -SQLCommand $SQLCommand |
+		Invoke-CustomyzerSQL -SQLCommand $SQLCommand |
 		Add-Member -MemberType ScriptProperty -Name Project -Force -PassThru -Value {
 			$This | Add-Member -MemberType NoteProperty -Name Project -Force -Value $($This | Get-CustomyzerProject)
 			$This.Project
@@ -694,7 +694,7 @@ function Get-CustomyzerProject {
 		
 		$SQLCommand = New-SQLSelect -TableName Project @ParametersParameter
 
-		Invoke-CustomizerSQL -SQLCommand $SQLCommand |
+		Invoke-CustomyzerSQL -SQLCommand $SQLCommand |
 		Add-Member -MemberType ScriptProperty -Name Product -Force -PassThru -Value {
 			$This | Add-Member -MemberType NoteProperty -Name Product -Force -Value $($This | Get-CustomyzerProduct)
 			$This.Product
@@ -708,7 +708,7 @@ function Get-CustomyzerProduct {
 	)
 	process {
 		$SQLCommand = New-SQLSelect -TableName Product -Parameters $PSBoundParameters
-		Invoke-CustomizerSQL -SQLCommand $SQLCommand |
+		Invoke-CustomyzerSQL -SQLCommand $SQLCommand |
 		Add-Member -MemberType ScriptProperty -Name Form -Force -PassThru -Value {
 			$This | Add-Member -MemberType NoteProperty -Name Form -Force -Value $($This | Get-CustomyzerForm)
 			$This.Form
@@ -722,7 +722,7 @@ function Get-CustomyzerForm {
 	)
 	process {
 		$SQLCommand = New-SQLSelect -TableName Form -Parameters $PSBoundParameters
-		Invoke-CustomizerSQL -SQLCommand $SQLCommand
+		Invoke-CustomyzerSQL -SQLCommand $SQLCommand
 	}
 }
 
@@ -732,7 +732,7 @@ function Get-CustomyzerApprovalOrder {
 	)
 	process {
 		$SQLCommand = New-SQLSelect -SchemaName Approval -TableName Order -Parameters $PSBoundParameters
-		Invoke-CustomizerSQL -SQLCommand $SQLCommand
+		Invoke-CustomyzerSQL -SQLCommand $SQLCommand
 	}
 }
 
@@ -753,4 +753,8 @@ SELECT top 300 *
 FROM Approval.PackList AS pl WITH (NOLOCK)
 ORDER BY pl.CreatedDateUTC DESC
 "@
+}
+
+function Install-CustomyzerPackListGenerationApplication {
+
 }
