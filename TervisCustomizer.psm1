@@ -446,11 +446,14 @@ function New-CustomyzerPacklistBatch {
 function Invoke-CutomyzerPackListProcess {
 	$BatchNumber = New-CustomyzerPacklistBatch
 	#New-CustomyzerPacklist
-	$PackListRecords = Get-CustomyzerApprovalPackList -BatchNumber $BatchNumber
+	$PackListRecords = Get-CustomyzerApprovalPackList -BatchNumber $BatchNumber |
+	Add-Member -Force -MemberType ScriptProperty -Name SizeAndFormType -PassThru -Value {
+		"$($This.OrderDetail.Project.Product.Form.Size)$($This.OrderDetail.Project.Product.Form.FormType.ToUpper())"
+	}
 
 	$PackListRecordsSorted = $PackListRecords |
 	Sort-Object -Property {$_.OrderDetail.Project.Product.Form.Size},
-		{"$($_.OrderDetail.Project.Product.Form.Size)$($_.OrderDetail.Project.Product.Form.FormType.ToUpper())"},
+		{$_.SizeAndFormType},
 		{$_.OrderDetail.Order.ERPOrderNumber},
 		{$_.OrderDetail.ERPOrderLineNumber}
 
@@ -465,7 +468,7 @@ function New-CustomyzerPacklistXlsx {
 
 	$RecordToWriteToExcel = foreach ($PackListRecord in $PackListRecords) {
 		[PSCustomObject]@{
-			FormSize = "$($PackListRecord.OrderDetail.Project.Product.Form.Size)$($PackListRecord.OrderDetail.Project.Product.Form.FormType.ToUpper())"
+			FormSize = $PackListRecord.SizeAndFormType
 			SalesOrderNumber = $PackListRecord.OrderDetail.Order.ERPOrderNumber
 			DesignNumber = $PackListRecord.OrderDetail.ERPOrderLineNumber
 			BatchNumber = $PackListRecord.BatchNumber
@@ -552,7 +555,7 @@ function New-CustomyzerPackListXML {
 	$DateTime = Get-Date
 
 	New-XMLDocument -AsString -InnerElements {
-		New-XMLElement -Name packlist -InnerElements {
+		New-XMLElement -Name packList -InnerElements {
 			New-XMLElement -Name batchNumber -InnerText $BatchNumber
 			New-XMLElement -Name batchDate -InnerText $DateTime.ToString("MM/dd/yyyy")
 			New-XMLElement -Name batchTime -InnerText $DateTime.ToString("hh:mm tt")
@@ -562,10 +565,10 @@ function New-CustomyzerPackListXML {
 						New-XMLElement -Name salesOrderNumber -InnerText $PackListRecord.OrderDetail.Order.ERPOrderNumber
 						New-XMLElement -Name salesLineNumber -InnerText $PackListRecord.OrderDetail.ERPOrderLineNumber
 						New-XMLElement -Name itemQuantity -InnerText $PackListRecord.Quantity
-						New-XMLElement -Name size -InnerText "$($PackListRecord.OrderDetail.Project.Product.Form.Size)$($PackListRecord.OrderDetail.Project.Product.Form.FormType.ToUpper())"
+						New-XMLElement -Name size -InnerText $PackListRecord.SizeAndFormType
 						New-XMLElement -Name itemNumber -InnerText $PackListRecord.OrderDetail.Project.FinalFGCode
 						New-XMLElement -Name scheduleNumber -InnerText $PackListRecord.ScheduleNumber
-						New-XMLElement -Name fileName -InnerText ( New-XMLCDATA -Value )
+						New-XMLElement -Name fileName -InnerElements ( New-XMLCDATA -Value $PackListRecord.OrderDetail.Project.FinalArchedImageLocation )
 					}
 				}
 			}
