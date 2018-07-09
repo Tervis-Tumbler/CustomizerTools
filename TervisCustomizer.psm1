@@ -445,36 +445,36 @@ function New-CustomyzerPacklistBatch {
 
 function Invoke-CutomyzerPackListProcess {
 	$BatchNumber = New-CustomyzerPacklistBatch
-	$PackListRecords = Get-CustomyzerApprovalPackList -BatchNumber $BatchNumber |
+	$PackListLines = Get-CustomyzerApprovalPackList -BatchNumber $BatchNumber |
 	Add-Member -Force -MemberType ScriptProperty -Name SizeAndFormType -PassThru -Value {
 		"$($This.OrderDetail.Project.Product.Form.Size)$($This.OrderDetail.Project.Product.Form.FormType.ToUpper())"
 	}
 
-	$PackListRecordsSorted = $PackListRecords |
+	$PackListLinesSorted = $PackListLines |
 	Sort-Object -Property {$_.OrderDetail.Project.Product.Form.Size},
 		{$_.SizeAndFormType},
 		{$_.OrderDetail.Order.ERPOrderNumber},
 		{$_.OrderDetail.ERPOrderLineNumber}
 
-	New-CustomyzerPacklistXlsx -BatchNumber $BatchNumber -PackListRecords $PackListRecordsSorted
-	New-CustomyzerPackListPurchaseRequisitionCSV -BatchNumber $BatchNumber -PackListRecords $PackListRecordsSorted
-	New-CustomyzerPackListXML -BatchNumber $BatchNumber -PackListRecords $PackListRecordsSorted
+	New-CustomyzerPacklistXlsx -BatchNumber $BatchNumber -PackListLines $PackListLinesSorted
+	New-CustomyzerPackListPurchaseRequisitionCSV -BatchNumber $BatchNumber -PackListLines $PackListLinesSorted
+	New-CustomyzerPackListXML -BatchNumber $BatchNumber -PackListLines $PackListLinesSorted
 }
 
 function New-CustomyzerPacklistXlsx {
 	param (
 		$BatchNumber,
-		$PackListRecords
+		$PackListLines
 	)
 
-	$RecordToWriteToExcel = foreach ($PackListRecord in $PackListRecords) {
+	$RecordToWriteToExcel = foreach ($PackListLine in $PackListLines) {
 		[PSCustomObject]@{
-			FormSize = $PackListRecord.SizeAndFormType
-			SalesOrderNumber = $PackListRecord.OrderDetail.Order.ERPOrderNumber
-			DesignNumber = $PackListRecord.OrderDetail.ERPOrderLineNumber
-			BatchNumber = $PackListRecord.BatchNumber
-			Quantity = $PackListRecord.Quantity
-			ScheduleNumber = $PackListRecord.ScheduleNumber
+			FormSize = $PackListLine.SizeAndFormType
+			SalesOrderNumber = $PackListLine.OrderDetail.Order.ERPOrderNumber
+			DesignNumber = $PackListLine.OrderDetail.ERPOrderLineNumber
+			BatchNumber = $PackListLine.BatchNumber
+			Quantity = $PackListLine.Quantity
+			ScheduleNumber = $PackListLine.ScheduleNumber
 		}
 	}
 
@@ -550,7 +550,7 @@ function Set-CustomyzerPackListXlsxRowValues {
 function New-CustomyzerPackListXML {
 	param (
 		$BatchNumber,
-		$PackListRecords
+		$PackListLines
 	)
 	$DateTime = Get-Date
 
@@ -560,15 +560,15 @@ function New-CustomyzerPackListXML {
 			New-XMLElement -Name batchDate -InnerText $DateTime.ToString("MM/dd/yyyy")
 			New-XMLElement -Name batchTime -InnerText $DateTime.ToString("hh:mm tt")
 			New-XMLElement -Name orders -InnerElements {
-				foreach ($PackListRecord in $PackListRecords) {
+				foreach ($PackListLine in $PackListLines) {
 					New-XMLElement -Name order -InnerElements {
-						New-XMLElement -Name salesOrderNumber -InnerText $PackListRecord.OrderDetail.Order.ERPOrderNumber
-						New-XMLElement -Name salesLineNumber -InnerText $PackListRecord.OrderDetail.ERPOrderLineNumber
-						New-XMLElement -Name itemQuantity -InnerText $PackListRecord.Quantity
-						New-XMLElement -Name size -InnerText $PackListRecord.SizeAndFormType
-						New-XMLElement -Name itemNumber -InnerText $PackListRecord.OrderDetail.Project.FinalFGCode
-						New-XMLElement -Name scheduleNumber -InnerText $PackListRecord.ScheduleNumber
-						New-XMLElement -Name fileName -InnerElements ( New-XMLCDATA -Value $PackListRecord.OrderDetail.Project.FinalArchedImageLocation )
+						New-XMLElement -Name salesOrderNumber -InnerText $PackListLine.OrderDetail.Order.ERPOrderNumber
+						New-XMLElement -Name salesLineNumber -InnerText $PackListLine.OrderDetail.ERPOrderLineNumber
+						New-XMLElement -Name itemQuantity -InnerText $PackListLine.Quantity
+						New-XMLElement -Name size -InnerText $PackListLine.SizeAndFormType
+						New-XMLElement -Name itemNumber -InnerText $PackListLine.OrderDetail.Project.FinalFGCode
+						New-XMLElement -Name scheduleNumber -InnerText $PackListLine.ScheduleNumber
+						New-XMLElement -Name fileName -InnerElements ( New-XMLCDATA -Value $PackListLine.OrderDetail.Project.FinalArchedImageLocation )
 					}
 				}
 			}
@@ -582,18 +582,18 @@ function New-CustomyzerPackListXML {
 function New-CustomyzerPackListPurchaseRequisitionCSV {
 	param (
 		$BatchNumber,
-		$PackListRecords
+		$PackListLines
 	)
 
-	$RecordToWriteToCSV = foreach ($PackListRecord in $PackListRecords) {
+	$RecordToWriteToCSV = foreach ($PackListLine in $PackListLines) {
 		[PSCustomObject]@{
-			ITEM_NUMBER = $PackListRecord.OrderDetail.Project.FinalFGCode
+			ITEM_NUMBER = $PackListLine.OrderDetail.Project.FinalFGCode
 			INTERFACE_SOURCECODE = "MIZER_REQ_IMPORT"
-			SALES_ORDER_NO = $PackListRecord.OrderDetail.Order.ERPOrderNumber
-			SO_LINE_NO =$PackListRecord.OrderDetail.ERPOrderLineNumber
-			QUANTITY = $PackListRecord.Quantity			
-			VENDOR_BATCH_NAME = $PackListRecord.BatchNumber
-			SCHEDULE_NUMBER = $PackListRecord.ScheduleNumber
+			SALES_ORDER_NO = $PackListLine.OrderDetail.Order.ERPOrderNumber
+			SO_LINE_NO =$PackListLine.OrderDetail.ERPOrderLineNumber
+			QUANTITY = $PackListLine.Quantity			
+			VENDOR_BATCH_NAME = $PackListLine.BatchNumber
+			SCHEDULE_NUMBER = $PackListLine.ScheduleNumber
 		}
 	}
 
