@@ -445,7 +445,6 @@ function New-CustomyzerPacklistBatch {
 
 function Invoke-CutomyzerPackListProcess {
 	$BatchNumber = New-CustomyzerPacklistBatch
-	#New-CustomyzerPacklist
 	$PackListRecords = Get-CustomyzerApprovalPackList -BatchNumber $BatchNumber |
 	Add-Member -Force -MemberType ScriptProperty -Name SizeAndFormType -PassThru -Value {
 		"$($This.OrderDetail.Project.Product.Form.Size)$($This.OrderDetail.Project.Product.Form.FormType.ToUpper())"
@@ -458,6 +457,8 @@ function Invoke-CutomyzerPackListProcess {
 		{$_.OrderDetail.ERPOrderLineNumber}
 
 	New-CustomyzerPacklistXlsx -BatchNumber $BatchNumber -PackListRecords $PackListRecordsSorted
+	New-CustomyzerPackListPurchaseRequisitionCSV -BatchNumber $BatchNumber -PackListRecords $PackListRecordsSorted
+	New-CustomyzerPackListXML -BatchNumber $BatchNumber -PackListRecords $PackListRecordsSorted
 }
 
 function New-CustomyzerPacklistXlsx {
@@ -551,7 +552,6 @@ function New-CustomyzerPackListXML {
 		$BatchNumber,
 		$PackListRecords
 	)
-	$XMLFileName = "TervisPackList-$BatchNumber.xml"
 	$DateTime = Get-Date
 
 	New-XMLDocument -AsString -InnerElements {
@@ -575,26 +575,8 @@ function New-CustomyzerPackListXML {
 		}
 	}
 
-
-#	var orderXML = new XElement("packList",
-#	new XElement("batchNumber", batchNumber),
-#	   new XElement("batchDate", creationDate.ToString(ConfigurationManager.AppSettings["DateFormat"].ToString())),
-#		new XElement("batchTime", creationDate.ToString("hh:mm tt")),
-#		 new XElement("orders",
-#from row in packListSpreadsheet.SpreadsheetRows
-#select
-# new XElement("order",
-#	 new XElement("salesOrderNumber", row.SalesOrderNumber),
-#		 new XElement("salesLineNumber", row.DesignNumber),
-#		 new XElement("itemQuantity", row.Quantity),
-#		 new XElement("size", row.FormSize),
-#		 new XElement("itemNumber", row.ItemNumber),
-#		 new XElement("scheduleNumber", row.ScheduleNumber),
-#		 new XElement("fileName", new XCData(row.FileName))
-#)));
-#
-#_log.Debug("XML file generated for batch: " + batchNumber);
-#return orderXML.ToString();
+	$XMLFileName = "TervisPackList-$BatchNumber.xml"
+	Out-File -FilePath .\$XMLFileName -Encoding ascii -Force
 }
 
 function New-CustomyzerPackListPurchaseRequisitionCSV {
