@@ -437,9 +437,9 @@ function New-CustomyzerBatchNumber {
 }
 
 function New-CustomyzerPacklistBatch {
-	$PackListItemsNotOnPackList = Get-CustomyzerApprovalPackList -NotOnPacklist
+	$PackListLinesNotInBatch = Get-CustomyzerApprovalPackList -NotInBatch
 	$BatchNumber = New-CustomyzerBatchNumber
-	$PackListItemsNotOnPackList | Set-CustomyzerApprovalPackList -BatchNumber $BatchNumber
+	$PackListLinesNotInBatch | Set-CustomyzerApprovalPackList -BatchNumber $BatchNumber
 	$BatchNumber
 }
 
@@ -621,7 +621,7 @@ function New-CustomyzerPackListPurchaseRequisitionCSV {
 
 function Get-CustomyzerApprovalPackList {
 	param (
-		[Switch]$NotOnPacklist,
+		[Switch]$NotInBatch,
 		$BatchNumber
 	)
 
