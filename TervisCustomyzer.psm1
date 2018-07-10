@@ -1,4 +1,34 @@
 ﻿$ModulePath = (Get-Module -ListAvailable TervisCustomyzer).ModuleBase
+. $ModulePath\Definition.ps1
+
+function Get-CustomyzerEnvironment {
+	param (
+		$EnvironmentName
+	)
+	$Environment = $CustomyzerEnvionrments |
+	Where-Object Name -EQ $EnvironmentName
+
+	$Environment | 
+	Add-Member -MemberType NoteProperty -Name CustomyzerDBConnectionString -Force -PassThru -Value (
+		Get-PasswordstateMSSQLDatabaseEntryDetails -PasswordID $Environment.CustomyzerDatabasePasswordStateEntryID |
+		ConvertTo-MSSQLConnectionString
+	)
+}
+
+function Set-CustomyzerModuleEnvironment {
+    param (
+        [Parameter(Mandatory)]$Name
+	)
+	
+	$Script:Environment = Get-CustomyzerEnvironment -EnvironmentName $Name
+}
+
+function Get-CustomyzerModuleEnvironment {
+	if (-not $Script:Environment) {
+		throw "Must call Set-CustomyzerModuleEnvironment before using the TervisCustomyzer module"
+	}
+	$Script:Environment
+}
 
 function Invoke-CustomyzerSQL {
     param (
@@ -8,15 +38,13 @@ function Invoke-CustomyzerSQL {
 		[Parameter(ParameterSetName="Parameters")]$ArbitraryWherePredicate,
         [Parameter(Mandatory,ParameterSetName="SQLCommand")]$SQLCommand
 	)
-	if (-not $Script:CustomyzerConnectionString) {
-		$Script:CustomyzerConnectionString = Get-PasswordstateMSSQLDatabaseEntryDetails -PasswordID 5366 | ConvertTo-MSSQLConnectionString
-	}
-    
+	$Environment = Get-CustomyzerModuleEnvironment
+
 	if (-not $SQLCommand) {
 		$SQLCommand = New-SQLSelect @PSBoundParameters
 	}
 
-    Invoke-MSSQL -ConnectionString $Script:CustomyzerConnectionString -sqlCommand $SQLCommand -ConvertFromDataRow
+    Invoke-MSSQL -ConnectionString $Environment.CustomyzerDBConnectionString -sqlCommand $SQLCommand -ConvertFromDataRow
 }
 
 function Get-CustomyzerApprovalOrder {
@@ -444,8 +472,23 @@ function New-CustomyzerPacklistBatch {
 }
 
 function Invoke-CutomyzerPackListProcess {
+	param (
+		$EnvironmentName
+	)
 	$BatchNumber = New-CustomyzerPacklistBatch
-	Invoke-CustomyzerPackListDocumentsGenerate -BatchNumber $BatchNumber
+	$PathToDocuments = Invoke-CustomyzerPackListDocumentsGenerate -BatchNumber $BatchNumber
+
+	$CustomyzerEnvironment = Get-CustomyzerEnvironment -EnvironmentName $EnvironmentName
+	Set-TervisEBSEnvironment -Name $EnvironmentName
+	$EBSIASNode = Get-EBSIASNode
+	
+	$CSVFile = Get-ChildItem -Filter *.csv -Path $PathToDocuments
+	Set-SFTPFile -RemotePath $CustomyzerEnvironment.RequisitionDestinationPath -LocalFile $CSVFile.FullName -SFTPSession $EBSIASNode.SFTPSession -Overwrite:$Overwrite
+
+	Copy-Item -Filter *.xml -Path $PathToDocuments -Destination "$($CustomyzerEnvironment.PackListFilesPathRoot)\Inbound\PackLists\Archive" -Force
+	Copy-Item -Filter *.xlsx -Path $PathToDocuments -Destination "$($CustomyzerEnvironment.PackListFilesPathRoot)\Inbound\PackLists\Archive" -Force
+	Copy-Item -Filter *.xml -Path $PathToDocuments -Destination $CustomyzerEnvironment.PackListXMLAndXLSXFilesCopyPath -Force
+	Copy-Item -Filter *.xlsx -Path $PathToDocuments -Destination $CustomyzerEnvironment.PackListXMLAndXLSXFilesCopyPath -Force
 }
 
 function Invoke-CustomyzerPackListDocumentsGenerate {
@@ -465,6 +508,8 @@ function Invoke-CustomyzerPackListDocumentsGenerate {
 	New-CustomyzerPacklistXlsx @Parameters
 	New-CustomyzerPurchaseRequisitionCSV @Parameters
 	New-CustomyzerPackListXML @Parameters
+
+	$CustomyzerPackListTemporaryFolder.FullName
 }
 
 function New-CustomyzerPackListTemporaryFolder {
@@ -653,7 +698,7 @@ function Get-CustomyzerApprovalPackList {
 		$BatchNumber
 	)
 
-	if ($NotOnPacklist) {
+	if ($NotInBatch) {
 		$ArbitraryWherePredicateParameter = @{
 			ArbitraryWherePredicate = @"
 			AND Approval.PackList.BatchNumber IS NULL
@@ -661,7 +706,7 @@ function Get-CustomyzerApprovalPackList {
 "@
 		}
 	}
-	$PSBoundParameters.Remove("NotOnPacklist") | Out-Null
+	$PSBoundParameters.Remove("NotInBatch") | Out-Null
 
 	$SQLCommand = New-SQLSelect -SchemaName Approval -TableName PackList @ArbitraryWherePredicateParameter -Parameters $PSBoundParameters
 
@@ -789,10 +834,6 @@ ORDER BY pl.CreatedDateUTC DESC
 function Install-CustomyzerPackListGenerationApplication {
 
 	Write-Output ("Moving PRD-Mizer to SGS Production")
-	Copy-Item \\mizerftp.tervis.com\MizerFTP\RPD-MizerFTP\Inbound\PackLists\*.xml  \\mizerftp.tervis.com\MizerFTP\PRD-MizerFTP\Inbound\PackLists\Archive -force
-	Copy-Item \\mizerftp.tervis.com\MizerFTP\RPD-MizerFTP\Inbound\PackLists\*.xlsx \\mizerftp.tervis.com\MizerFTP\PRD-MizerFTP\Inbound\PackLists\Archive -force
-	Move-Item \\mizerftp.tervis.com\MizerFTP\PRD-MizerFTP\Inbound\PackLists\*.xml  "\\sgs-tervis-mt\User Mailboxes\SGS-NOKOMIS\To Send" -force
-	Move-Item \\mizerftp.tervis.com\MizerFTP\PRD-MizerFTP\Inbound\PackLists\*.xlsx "\\sgs-tervis-mt\User Mailboxes\SGS-NOKOMIS\To Send" -force
 
 	$Node = Get-TervisApplicationNode -ApplicationName ScheduledTasks
 	$Node | Install-PowerShellApplication -RepetitionIntervalName EverWorkdayAt1PM -
