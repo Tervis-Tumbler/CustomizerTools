@@ -484,42 +484,6 @@ function Invoke-CutomyzerPackListProcess {
 	$DocumentFilePaths | Send-CustomyzerPackListDocument -EnvironmentName $EnvironmentName
 }
 
-function Send-CustomyzerPackListDocument {
-	param (
-		[Parameter(Mandatory,ValueFromPipelineByPropertyName)]$XLSXFilePath,
-		[Parameter(Mandatory,ValueFromPipelineByPropertyName)]$XMLFilePath,
-		[Parameter(Mandatory,ValueFromPipelineByPropertyName)]$CSVFilePath,
-		[Parameter(Mandatory)]$EnvironmentName,
-		[Parameter(Mandatory)]$BatchNumber
-	)
-	process {
-		$CustomyzerEnvironment = Get-CustomyzerEnvironment -EnvironmentName $EnvironmentName
-		$DateTime = Get-Date
-
-		$MailMessageParameters = @{
-			From = "customercare@tervis.com"
-			To = $CustomyzerEnvironment.EmailAddressToRecieveXLSX
-			Subject = "$($CustomyzerEnvironment.Name) Packlist"
-			Attachments = $XLSXFilePath
-			Body =  @"
-<p>Packlist generated for batch - $BatchNumber</p>
-<p><b>Created Date: </b>$($DateTime.ToString("MM/dd/yyyy"))</p>
-<p><b>Created Time: </b>$($DateTime.ToString("hh:mm tt"))</p>
-"@
-		}
-		Send-TervisMailMessage @MailMessageParameters -BodyAsHTML
-
-		Copy-Item -Path $XMLFilePath -Destination $CustomyzerEnvironment.PackListXMLDestinationPath -Force
-
-		Set-TervisEBSEnvironment -Name $EnvironmentName
-		$EBSIASNode = Get-EBSIASNode		
-		Set-SFTPFile -RemotePath $CustomyzerEnvironment.RequisitionDestinationPath -LocalFile $CSVFilePath -SFTPSession $EBSIASNode.SFTPSession -Overwrite:$Overwrite
-
-		$ArchivePath = "$($CustomyzerEnvironment.PackListFilesPathRoot)\Inbound\PackLists\Archive"
-		$XLSXFilePath,$XMLFilePath,$CSVFilePath | Copy-Item -Destination $ArchivePath -Force
-	}
-}
-
 function Invoke-CustomyzerPackListDocumentsGenerate {
 	param (
 		[Parameter(Mandatory)]$BatchNumber
@@ -725,11 +689,47 @@ function New-CustomyzerPurchaseRequisitionCSV {
 	$CSVFilePath
 }
 
+function Send-CustomyzerPackListDocument {
+	param (
+		[Parameter(Mandatory,ValueFromPipelineByPropertyName)]$XLSXFilePath,
+		[Parameter(Mandatory,ValueFromPipelineByPropertyName)]$XMLFilePath,
+		[Parameter(Mandatory,ValueFromPipelineByPropertyName)]$CSVFilePath,
+		[Parameter(Mandatory)]$EnvironmentName,
+		[Parameter(Mandatory)]$BatchNumber
+	)
+	process {
+		$CustomyzerEnvironment = Get-CustomyzerEnvironment -EnvironmentName $EnvironmentName
+		$DateTime = Get-Date
+
+		$MailMessageParameters = @{
+			From = "customercare@tervis.com"
+			To = $CustomyzerEnvironment.EmailAddressToRecieveXLSX
+			Subject = "$($CustomyzerEnvironment.Name) Packlist"
+			Attachments = $XLSXFilePath
+			Body =  @"
+<p>Packlist generated for batch - $BatchNumber</p>
+<p><b>Created Date: </b>$($DateTime.ToString("MM/dd/yyyy"))</p>
+<p><b>Created Time: </b>$($DateTime.ToString("hh:mm tt"))</p>
+"@
+		}
+		Send-TervisMailMessage @MailMessageParameters -BodyAsHTML
+
+		Copy-Item -Path $XMLFilePath -Destination $CustomyzerEnvironment.PackListXMLDestinationPath -Force
+
+		Set-TervisEBSEnvironment -Name $EnvironmentName
+		$EBSIASNode = Get-EBSIASNode		
+		Set-SFTPFile -RemotePath $CustomyzerEnvironment.RequisitionDestinationPath -LocalFile $CSVFilePath -SFTPSession $EBSIASNode.SFTPSession -Overwrite:$Overwrite
+
+		$ArchivePath = "$($CustomyzerEnvironment.PackListFilesPathRoot)\Inbound\PackLists\Archive"
+		$XLSXFilePath,$XMLFilePath,$CSVFilePath | Copy-Item -Destination $ArchivePath -Force
+	}
+}
+
 function Get-CustomizerApprovalPacklistRecentBatch {
 	$SQLCommand = @"
-SELECT distinct [BatchNumber]
+SELECT distinct top 10 [BatchNumber]
 FROM [Approval].[PackList]
-Where [CreatedDateUTC] > '$((Get-Date).AddDays(-14).ToString("yyyy-MM-dd"))'
+--Where [CreatedDateUTC] > '$((Get-Date).AddDays(-14).ToString("yyyy-MM-dd"))'
 "@
 	Invoke-CustomyzerSQL -SQLCommand $SQLCommand
 }
@@ -759,6 +759,17 @@ function Get-CustomyzerApprovalPackList {
 	} |
 	Add-Member -Force -MemberType ScriptProperty -Name SizeAndFormType -PassThru -Value {
 		"$($This.OrderDetail.Project.Product.Form.Size)$($This.OrderDetail.Project.Product.Form.FormType.ToUpper())"
+	}
+}
+
+function Set-CustomyzerApprovalPackList {
+	param (
+		[Parameter(Mandatory,ValueFromPipelineByPropertyName)]$PackListID,
+		$BatchNumber
+	)
+	process {
+		$SQLCommand = New-SQLUpdate -SchemaName Approval -TableName PackList -WhereParameters @{PackListID = $PackListID} -ValueParameters @{BatchNumber = $BatchNumber}
+		Invoke-CustomyzerSQL -SQLCommand $SQLCommand
 	}
 }
 
