@@ -12,6 +12,10 @@ function Get-CustomyzerEnvironment {
 	Add-Member -MemberType NoteProperty -Name CustomyzerDBConnectionString -Force -PassThru -Value (
 		Get-PasswordstateMSSQLDatabaseEntryDetails -PasswordID $Environment.CustomyzerDatabasePasswordStateEntryID |
 		ConvertTo-MSSQLConnectionString
+	) | 
+	Add-Member -MemberType NoteProperty -Name EmailAddressToRecieveXLSX -Force -PassThru -Value (
+		Get-PasswordstatePassword -ID $Environment.EmailAddressToRecieveXLSXPasswordStateEntryID |
+		Select-Object -ExpandProperty Password
 	)
 }
 
@@ -476,19 +480,44 @@ function Invoke-CutomyzerPackListProcess {
 		$EnvironmentName
 	)
 	$BatchNumber = New-CustomyzerPacklistBatch
-	$PathToDocuments = Invoke-CustomyzerPackListDocumentsGenerate -BatchNumber $BatchNumber
+	$DocumentFilePaths = Invoke-CustomyzerPackListDocumentsGenerate -BatchNumber $BatchNumber
+	$DocumentFilePaths | Send-CustomyzerPackListDocument -EnvironmentName $EnvironmentName
+}
 
-	$CustomyzerEnvironment = Get-CustomyzerEnvironment -EnvironmentName $EnvironmentName
-	Set-TervisEBSEnvironment -Name $EnvironmentName
-	$EBSIASNode = Get-EBSIASNode
-	
-	$CSVFile = Get-ChildItem -Filter *.csv -Path $PathToDocuments
-	Set-SFTPFile -RemotePath $CustomyzerEnvironment.RequisitionDestinationPath -LocalFile $CSVFile.FullName -SFTPSession $EBSIASNode.SFTPSession -Overwrite:$Overwrite
+function Send-CustomyzerPackListDocument {
+	param (
+		[Parameter(Mandatory,ValueFromPipelineByPropertyName)]$XLSXFilePath,
+		[Parameter(Mandatory,ValueFromPipelineByPropertyName)]$XMLFilePath,
+		[Parameter(Mandatory,ValueFromPipelineByPropertyName)]$CSVFilePath,
+		[Parameter(Mandatory)]$EnvironmentName,
+		[Parameter(Mandatory)]$BatchNumber
+	)
+	process {
+		$CustomyzerEnvironment = Get-CustomyzerEnvironment -EnvironmentName $EnvironmentName
+		$DateTime = Get-Date
 
-	Copy-Item -Filter *.xml -Path $PathToDocuments -Destination "$($CustomyzerEnvironment.PackListFilesPathRoot)\Inbound\PackLists\Archive" -Force
-	Copy-Item -Filter *.xlsx -Path $PathToDocuments -Destination "$($CustomyzerEnvironment.PackListFilesPathRoot)\Inbound\PackLists\Archive" -Force
-	Copy-Item -Filter *.xml -Path $PathToDocuments -Destination $CustomyzerEnvironment.PackListXMLAndXLSXFilesCopyPath -Force
-	Copy-Item -Filter *.xlsx -Path $PathToDocuments -Destination $CustomyzerEnvironment.PackListXMLAndXLSXFilesCopyPath -Force
+		$MailMessageParameters = @{
+			From = "customercare@tervis.com"
+			To = $CustomyzerEnvironment.EmailAddressToRecieveXLSX
+			Subject = "$($CustomyzerEnvironment.Name) Packlist"
+			Attachments = $XLSXFilePath
+			Body =  @"
+<p>Packlist generated for batch - $BatchNumber</p>
+<p><b>Created Date: </b>$($DateTime.ToString("MM/dd/yyyy"))</p>
+<p><b>Created Time: </b>$($DateTime.ToString("hh:mm tt"))</p>
+"@
+		}
+		Send-TervisMailMessage @MailMessageParameters -BodyAsHTML
+
+		Copy-Item -Path $XMLFilePath -Destination $CustomyzerEnvironment.PackListXMLDestinationPath -Force
+
+		Set-TervisEBSEnvironment -Name $EnvironmentName
+		$EBSIASNode = Get-EBSIASNode		
+		Set-SFTPFile -RemotePath $CustomyzerEnvironment.RequisitionDestinationPath -LocalFile $CSVFilePath -SFTPSession $EBSIASNode.SFTPSession -Overwrite:$Overwrite
+
+		$ArchivePath = "$($CustomyzerEnvironment.PackListFilesPathRoot)\Inbound\PackLists\Archive"
+		$XLSXFilePath,$XMLFilePath,$CSVFilePath | Copy-Item -Destination $ArchivePath -Force
+	}
 }
 
 function Invoke-CustomyzerPackListDocumentsGenerate {
@@ -502,14 +531,14 @@ function Invoke-CustomyzerPackListDocumentsGenerate {
 	$Parameters = @{
 		BatchNumber = $BatchNumber
 		PackListLines = $PackListLinesSorted
-		Path = $CustomyzerPackListTemporaryFolder.FullName		
+		Path = $CustomyzerPackListTemporaryFolder.FullName
 	}
 
-	New-CustomyzerPacklistXlsx @Parameters
-	New-CustomyzerPurchaseRequisitionCSV @Parameters
-	New-CustomyzerPackListXML @Parameters
-
-	$CustomyzerPackListTemporaryFolder.FullName
+	[PSCustomObject]@{
+		XLSXFilePath = New-CustomyzerPacklistXlsx @Parameters
+		CSVFilePath = New-CustomyzerPurchaseRequisitionCSV @Parameters
+		XMLFilePath = New-CustomyzerPackListXML @Parameters
+	}
 }
 
 function New-CustomyzerPackListTemporaryFolder {
@@ -555,8 +584,10 @@ function New-CustomyzerPacklistXlsx {
 	Set-CustomyzerPackListXlsxHeaderValues -PackingListWorkSheet $PackingListWorkSheet -PackListXlsxLines $RecordToWriteToExcel
 	Set-CustomyzerPackListXlsxRowValues -PackingListWorkSheet $PackingListWorkSheet -PackListXlsxLines $RecordToWriteToExcel
 
-	$ExcelFileName = "TervisPackList-$BatchNumber.xlsx"	
-	$Excel.SaveAs("$Path\$ExcelFileName")
+	$XlsxFileName = "TervisPackList-$BatchNumber.xlsx"
+	$XlsxFilePath = "$Path\$XlsxFileName"
+	$Excel.SaveAs($XlsxFilePath)
+	$XlsxFilePath 
 }
 
 function Set-CustomyzerPackListXlsxHeaderValues {
@@ -648,7 +679,9 @@ function New-CustomyzerPackListXML {
 	}
 
 	$XMLFileName = "TervisPackList-$BatchNumber.xml"
-	$XMLContent | Out-File -FilePath $Path\$XMLFileName -Encoding ascii
+	$XMLFilePath = "$Path\$XMLFileName"
+	$XMLContent | Out-File -FilePath $XMLFilePath -Encoding ascii
+	$XMLFilePath
 }
 
 function New-CustomyzerPurchaseRequisitionCSV {
@@ -669,9 +702,6 @@ function New-CustomyzerPurchaseRequisitionCSV {
 			SCHEDULE_NUMBER = $PackListLine.ScheduleNumber
 		}
 	}
-
-	$CSVFileName = "xxmizer_reqimport_$BatchNumber.csv"
-
 	#This should be the simple way to accomplish what is needed but we need to confirm that whatever
 	#consumes this CSV can handle the values between the delimiter being in "" as currently they are not
 	#$RecordToWriteToCSV |
@@ -689,7 +719,19 @@ function New-CustomyzerPurchaseRequisitionCSV {
 	$CSVRows = $RecordToWriteToCSV | 
 	ForEach-Object { $_.psobject.Properties.value -join "|" }
 	
-	$CSVHeader,$CSVRows | Out-File -Encoding ascii -FilePath $Path\$CSVFileName
+	$CSVFileName = "xxmizer_reqimport_$BatchNumber.csv"
+	$CSVFilePath = "$Path\$CSVFileName"
+	$CSVHeader,$CSVRows | Out-File -Encoding ascii -FilePath $CSVFilePath
+	$CSVFilePath
+}
+
+function Get-CustomizerApprovalPacklistRecentBatch {
+	$SQLCommand = @"
+SELECT distinct [BatchNumber]
+FROM [Approval].[PackList]
+Where [CreatedDateUTC] > '$((Get-Date).AddDays(-14).ToString("yyyy-MM-dd"))'
+"@
+	Invoke-CustomyzerSQL -SQLCommand $SQLCommand
 }
 
 function Get-CustomyzerApprovalPackList {

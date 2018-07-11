@@ -1,21 +1,24 @@
 $CustomyzerEnvionrments = [PSCustomObject]@{
     Name = "Production"
     PackListFilesPathRoot = "\\mizerftp.tervis.com\MizerFTP\PRD-MizerFTP"
-    PackListXMLAndXLSXFilesCopyPath = "\\sgs-tervis-mt\User Mailboxes\SGS-NOKOMIS\To Send"
+    PackListXMLDestinationPath = "\\sgs-tervis-mt\User Mailboxes\SGS-NOKOMIS\To Send"
     RequisitionDestinationPath = "/ebsapps/PRD/biztalk/Mizer/inbound"
     CustomyzerDatabasePasswordStateEntryID = 5366
+    EmailAddressToRecieveXLSXPasswordStateEntryID = 5488
 },
 [PSCustomObject]@{
     Name = "Epsilon"
     PackListFilesPathRoot = "\\mizerftp.tervis.com\MizerFTP\EPS-MizerFTP"
-    PackListXMLAndXLSXFilesCopyPath = "\\tervis.prv\applications\Customizer\SGS\Epsilon"
+    PackListXMLDestinationPath = "\\tervis.prv\applications\Customizer\SGS\Epsilon"
     RequisitionDestinationPath = "/ebsapps/SIT/biztalk/Mizer/inbound"
     CustomyzerDatabasePasswordStateEntryID = 5486
+    EmailAddressToRecieveXLSXPasswordStateEntryID = 5489
 },
 [PSCustomObject]@{
     Name = "Delta"
     PackListFilesPathRoot = "\\mizerftp.tervis.com\MizerFTP\DLT-MizerFTP"
-    PackListXMLAndXLSXFilesCopyPath = "\\tervis.prv\applications\Customizer\SGS\Delta"
+    PackListXMLDestinationPath = "\\tervis.prv\applications\Customizer\SGS\Delta"
     RequisitionDestinationPath = "/ebsapps/DEV/biztalk/Mizer/inbound"
-    CustomyzerDatabasePasswordStateEntryID = 0000
+    CustomyzerDatabasePasswordStateEntryID = 5485
+    EmailAddressToRecieveXLSXPasswordStateEntryID = 5490
 }
