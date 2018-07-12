@@ -456,14 +456,6 @@ SELECT * FROM XXTRVS.XXWIP_DISCRETE_JOBS_MIZER_STG where last_update_date is nul
 "@
 }
 
-function Install-CustomyzerPackListGeneration {
-	azurerm
-	
-	https://www.nuget.org/packages/DocumentFormat.OpenXml/ or equivelant
-	connect-azurermaccount -Subscription "Production and Infrastructure - Microsoft Azure Enterprise"
-
-}
-
 function New-CustomyzerBatchNumber {
 	(Get-Date).ToString("yyyyMMdd-HHmm")
 }
@@ -732,7 +724,7 @@ function Send-CustomyzerPackListDocument {
 	}
 }
 
-function Get-CustomizerApprovalPacklistRecentBatch {
+function Get-CustomyzerApprovalPacklistRecentBatch {
 	$SQLCommand = @"
 SELECT distinct top 10 [BatchNumber]
 FROM [Approval].[PackList]
@@ -893,16 +885,18 @@ ORDER BY pl.CreatedDateUTC DESC
 
 function Install-CustomyzerPackListGenerationApplication {
 	param (
-		$Environment
+		[Parameter(Mandatory)]$EnvironmentName,
+		[Parameter(Mandatory)]$ComputerName
 	)
-
-
-	$Node = Get-TervisApplicationNode -ApplicationName ScheduledTasks
-	$Node | Install-PowerShellApplication -RepetitionIntervalName EverWorkdayAt1PM -ModuleName TervisCustomyzer -DependentTervisModuleNames PasswordstatePowershell,
+	$ScheduledTasksCredential = New-Object System.Management.Automation.PSCredential ("system", (new-object System.Security.SecureString))
+	Install-PowerShellApplication -RepetitionIntervalName EverWorkdayAt1PM -ModuleName TervisCustomyzer -TervisModuleDependencies PasswordstatePowershell,
 		PowerShellORM,
 		InvokeSQL,
 		TervisMicrosoft.PowerShell.Security,
 		TervisMicrosoft.PowerShell.Utility,
-		TervisPasswordstate
-
+		TervisPasswordstate,
+		WebServicesPowerShellProxyBuilder -PowerShellGalleryDependencies ImportExcel -ComputerName $ComputerName -CommandString @"
+Set-CustomyzerModuleEnvironment -Name $EnvironmentName
+Invoke-CutomyzerPackListProcess -EnvironmentName $EnvironmentName
+"@ -ScheduledTasksCredential $ScheduledTasksCredential -ScheduledTaskName "CustomyzerPackListGeneration $EnvironmentName"
 }
