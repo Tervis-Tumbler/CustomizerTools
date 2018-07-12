@@ -462,9 +462,12 @@ function New-CustomyzerBatchNumber {
 
 function New-CustomyzerPacklistBatch {
 	$PackListLinesNotInBatch = Get-CustomyzerApprovalPackList -NotInBatch
-	$BatchNumber = New-CustomyzerBatchNumber
-	$PackListLinesNotInBatch | Set-CustomyzerApprovalPackList -BatchNumber $BatchNumber
-	$BatchNumber
+	
+	if ($PackListLinesNotInBatch) {
+		$BatchNumber = New-CustomyzerBatchNumber
+		$PackListLinesNotInBatch | Set-CustomyzerApprovalPackList -BatchNumber $BatchNumber
+		$BatchNumber
+	}
 }
 
 function Invoke-CutomyzerPackListProcess {
@@ -472,8 +475,10 @@ function Invoke-CutomyzerPackListProcess {
 		$EnvironmentName
 	)
 	$BatchNumber = New-CustomyzerPacklistBatch
-	$DocumentFilePaths = Invoke-CustomyzerPackListDocumentsGenerate -BatchNumber $BatchNumber
-	$DocumentFilePaths | Send-CustomyzerPackListDocument -EnvironmentName $EnvironmentName
+	if ($BatchNumber) {
+		$DocumentFilePaths = Invoke-CustomyzerPackListDocumentsGenerate -BatchNumber $BatchNumber
+		$DocumentFilePaths | Send-CustomyzerPackListDocument -EnvironmentName $EnvironmentName	
+	}
 }
 
 function Invoke-CustomyzerPackListDocumentsGenerate {
