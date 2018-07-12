@@ -509,6 +509,7 @@ function New-CustomyzerPackListTemporaryFolder {
 	param (
 		[Parameter(Mandatory)]$BatchNumber
 	)
+	$TemporaryFolderPath = "$Env:TEMP\$BatchNumber"
 	Remove-Item -Path $TemporaryFolderPath -Force -Recurse -ErrorAction SilentlyContinue
 	New-Item -ItemType Directory -Path $TemporaryFolderPath -Force
 }
@@ -601,8 +602,12 @@ function Set-CustomyzerPackListXlsxRowValues {
 		ScheduleNumber = "P"
 	}
 
-	foreach($Line in $PackListXlsxLines) {
-		$RowNumber = $PackListXlsxLines.IndexOf($Line) + $StartOfPackListLineDataRowNumber
+	$PackListXlsxLines |
+	ForEach-Object -Begin {
+		$PackListXlsxLinesIndexNumber = 0
+	} -Process {
+		$Line = $_
+		$RowNumber = $PackListXlsxLinesIndexNumber + $StartOfPackListLineDataRowNumber
 		$PropertyNames = $Line.psobject.Properties.name
 		
 		foreach ($PropertyName in $PropertyNames) {
@@ -610,6 +615,8 @@ function Set-CustomyzerPackListXlsxRowValues {
 			$CellAddress = "$ColumnLetter$RowNumber"
 			$PackingListWorkSheet.Cells[$CellAddress].Value = $Line.$PropertyName
 		}
+
+		$PackListXlsxLinesIndexNumber += 1
 	}
 }
 
@@ -885,10 +892,17 @@ ORDER BY pl.CreatedDateUTC DESC
 }
 
 function Install-CustomyzerPackListGenerationApplication {
+	param (
+		$Environment
+	)
 
-	Write-Output ("Moving PRD-Mizer to SGS Production")
 
 	$Node = Get-TervisApplicationNode -ApplicationName ScheduledTasks
-	$Node | Install-PowerShellApplication -RepetitionIntervalName EverWorkdayAt1PM -
+	$Node | Install-PowerShellApplication -RepetitionIntervalName EverWorkdayAt1PM -ModuleName TervisCustomyzer -DependentTervisModuleNames PasswordstatePowershell,
+		PowerShellORM,
+		InvokeSQL,
+		TervisMicrosoft.PowerShell.Security,
+		TervisMicrosoft.PowerShell.Utility,
+		TervisPasswordstate
 
 }
