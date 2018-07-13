@@ -10,11 +10,11 @@ function Get-CustomyzerEnvironment {
 
 	$Environment | 
 	Add-Member -MemberType NoteProperty -Name CustomyzerDBConnectionString -Force -PassThru -Value (
-		Get-PasswordstateMSSQLDatabaseEntryDetails -PasswordID $Environment.CustomyzerDatabasePasswordStateEntryID |
+		Get-TervisPasswordstatePassword -Guid $Environment.CustomyzerDatabasePasswordStatePasswordGUID -PropertyMapName MSSQLDatabase |
 		ConvertTo-MSSQLConnectionString
-	) | 
+	) |
 	Add-Member -MemberType NoteProperty -Name EmailAddressToRecieveXLSX -Force -PassThru -Value (
-		Get-PasswordstatePassword -ID $Environment.EmailAddressToRecieveXLSXPasswordStateEntryID |
+		Get-TervisPasswordstatePassword -Guid $Environment.EmailAddressToRecieveXLSXPasswordStatePasswordGUID |
 		Select-Object -ExpandProperty Password
 	)
 }
@@ -23,7 +23,6 @@ function Set-CustomyzerModuleEnvironment {
     param (
         [Parameter(Mandatory)]$Name
 	)
-	
 	$Script:Environment = Get-CustomyzerEnvironment -EnvironmentName $Name
 }
 
@@ -36,7 +35,6 @@ function Get-CustomyzerModuleEnvironment {
 
 function Invoke-CustomyzerSQL {
     param (
-		
 		[Parameter(Mandatory,ParameterSetName="Parameters")]$TableName,
 		[Parameter(Mandatory,ParameterSetName="Parameters")]$Parameters,
 		[Parameter(ParameterSetName="Parameters")]$ArbitraryWherePredicate,
