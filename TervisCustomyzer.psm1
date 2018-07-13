@@ -462,7 +462,7 @@ function New-CustomyzerBatchNumber {
 
 function New-CustomyzerPacklistBatch {
 	$PackListLinesNotInBatch = Get-CustomyzerApprovalPackList -NotInBatch
-	
+
 	if ($PackListLinesNotInBatch) {
 		$BatchNumber = New-CustomyzerBatchNumber
 		$PackListLinesNotInBatch | Set-CustomyzerApprovalPackList -BatchNumber $BatchNumber
@@ -476,14 +476,17 @@ function Invoke-CutomyzerPackListProcess {
 	)
 	$BatchNumber = New-CustomyzerPacklistBatch
 	if ($BatchNumber) {
-		$DocumentFilePaths = Invoke-CustomyzerPackListDocumentsGenerate -BatchNumber $BatchNumber
-		$DocumentFilePaths | Send-CustomyzerPackListDocument -EnvironmentName $EnvironmentName	
+		$DateTime = (Get-Date)
+		$DocumentFilePaths = Invoke-CustomyzerPackListDocumentsGenerate -BatchNumber $BatchNumber -DateTime $DateTime
+		$DocumentFilePaths |
+		Send-CustomyzerPackListDocument -EnvironmentName $EnvironmentName -DateTime $DateTime
 	}
 }
 
 function Invoke-CustomyzerPackListDocumentsGenerate {
 	param (
-		[Parameter(Mandatory)]$BatchNumber
+		[Parameter(Mandatory)]$BatchNumber,
+		$DateTime = (Get-Date)
 	)
 	$PackListLines = Get-CustomyzerApprovalPackList -BatchNumber $BatchNumber
 	$PackListLinesSorted = Invoke-CustomyzerPackListLinesSort -PackListLines $PackListLines
@@ -496,9 +499,9 @@ function Invoke-CustomyzerPackListDocumentsGenerate {
 	}
 
 	[PSCustomObject]@{
-		XLSXFilePath = New-CustomyzerPacklistXlsx @Parameters
+		XLSXFilePath = New-CustomyzerPacklistXlsx @Parameters -DateTime $DateTime
 		CSVFilePath = New-CustomyzerPurchaseRequisitionCSV @Parameters
-		XMLFilePath = New-CustomyzerPackListXML @Parameters
+		XMLFilePath = New-CustomyzerPackListXML @Parameters -DateTime $DateTime
 	}
 }
 
@@ -526,7 +529,8 @@ function New-CustomyzerPacklistXlsx {
 	param (
 		[Parameter(Mandatory)]$BatchNumber,
 		[Parameter(Mandatory)]$PackListLines,
-		[Parameter(Mandatory)]$Path
+		[Parameter(Mandatory)]$Path,
+		$DateTime = (Get-Date)
 	)
 
 	$RecordToWriteToExcel = foreach ($PackListLine in $PackListLines) {
@@ -543,7 +547,7 @@ function New-CustomyzerPacklistXlsx {
 	$Excel = Export-Excel -Path $ModulePath\PackListTemplate.xlsx -PassThru
 	$PackingListWorkSheet = $Excel.Workbook.Worksheets["PackingList"]
 
-	Set-CustomyzerPackListXlsxHeaderValues -PackingListWorkSheet $PackingListWorkSheet -PackListXlsxLines $RecordToWriteToExcel
+	Set-CustomyzerPackListXlsxHeaderValues -PackingListWorkSheet $PackingListWorkSheet -PackListXlsxLines $RecordToWriteToExcel -DateTime $DateTime
 	Set-CustomyzerPackListXlsxRowValues -PackingListWorkSheet $PackingListWorkSheet -PackListXlsxLines $RecordToWriteToExcel
 
 	$XlsxFileName = "TervisPackList-$BatchNumber.xlsx"
@@ -555,10 +559,9 @@ function New-CustomyzerPacklistXlsx {
 function Set-CustomyzerPackListXlsxHeaderValues {
 	param (
 		[Parameter(Mandatory)]$PackingListWorkSheet,
-		[Parameter(Mandatory)]$PackListXlsxLines
+		[Parameter(Mandatory)]$PackListXlsxLines,
+		$DateTime = (Get-Date)
 	)
-	
-	$DateTime = Get-Date
 	$PackingListWorkSheet.Names["DownloadDate"].value = $DateTime.ToString("MM/dd/yyyy")
 	$PackingListWorkSheet.Names["DownloadTime"].value = $DateTime.ToString("hh:mm tt")
 
@@ -606,7 +609,7 @@ function Set-CustomyzerPackListXlsxRowValues {
 		$Line = $_
 		$RowNumber = $PackListXlsxLinesIndexNumber + $StartOfPackListLineDataRowNumber
 		$PropertyNames = $Line.psobject.Properties.name
-		
+
 		foreach ($PropertyName in $PropertyNames) {
 			$ColumnLetter = $PropertyNameToColumnLetterMap.$PropertyName
 			$CellAddress = "$ColumnLetter$RowNumber"
@@ -621,9 +624,9 @@ function New-CustomyzerPackListXML {
 	param (
 		[Parameter(Mandatory)]$BatchNumber,
 		[Parameter(Mandatory)]$PackListLines,
-		[Parameter(Mandatory)]$Path
+		[Parameter(Mandatory)]$Path,
+		$DateTime = (Get-Date)
 	)
-	$DateTime = Get-Date
 
 	$XMLContent = New-XMLDocument -AsString -InnerElements {
 		New-XMLElement -Name packList -InnerElements {
@@ -665,7 +668,7 @@ function New-CustomyzerPurchaseRequisitionCSV {
 			INTERFACE_SOURCECODE = "MIZER_REQ_IMPORT"
 			SALES_ORDER_NO = $PackListLine.OrderDetail.Order.ERPOrderNumber
 			SO_LINE_NO =$PackListLine.OrderDetail.ERPOrderLineNumber
-			QUANTITY = $PackListLine.Quantity			
+			QUANTITY = $PackListLine.Quantity
 			VENDOR_BATCH_NAME = $PackListLine.BatchNumber
 			SCHEDULE_NUMBER = $PackListLine.ScheduleNumber
 		}
@@ -684,7 +687,7 @@ function New-CustomyzerPurchaseRequisitionCSV {
 	"VENDOR_BATCH_NAME",
 	"SCHEDULE_NUMBER" -join "|"
 	
-	$CSVRows = $RecordToWriteToCSV | 
+	$CSVRows = $RecordToWriteToCSV |
 	ForEach-Object { $_.psobject.Properties.value -join "|" }
 	
 	$CSVFileName = "xxmizer_reqimport_$BatchNumber.csv"
@@ -699,11 +702,11 @@ function Send-CustomyzerPackListDocument {
 		[Parameter(Mandatory,ValueFromPipelineByPropertyName)]$XMLFilePath,
 		[Parameter(Mandatory,ValueFromPipelineByPropertyName)]$CSVFilePath,
 		[Parameter(Mandatory)]$EnvironmentName,
-		[Parameter(Mandatory)]$BatchNumber
+		[Parameter(Mandatory)]$BatchNumber,
+		$DateTime = (Get-Date)
 	)
 	process {
 		$CustomyzerEnvironment = Get-CustomyzerEnvironment -EnvironmentName $EnvironmentName
-		$DateTime = Get-Date
 
 		$MailMessageParameters = @{
 			From = "customercare@tervis.com"
@@ -721,7 +724,7 @@ function Send-CustomyzerPackListDocument {
 		Copy-Item -Path $XMLFilePath -Destination $CustomyzerEnvironment.PackListXMLDestinationPath -Force
 
 		Set-TervisEBSEnvironment -Name $EnvironmentName
-		$EBSIASNode = Get-EBSIASNode		
+		$EBSIASNode = Get-EBSIASNode
 		Set-SFTPFile -RemotePath $CustomyzerEnvironment.RequisitionDestinationPath -LocalFile $CSVFilePath -SFTPSession $EBSIASNode.SFTPSession -Overwrite:$Overwrite
 
 		$ArchivePath = "$($CustomyzerEnvironment.PackListFilesPathRoot)\Inbound\PackLists\Archive"
@@ -893,6 +896,7 @@ function Install-CustomyzerPackListGenerationApplication {
 		[Parameter(Mandatory)]$EnvironmentName,
 		[Parameter(Mandatory)]$ComputerName
 	)
+	$PassswordstateAPIKey = Get-PasswordstatePassword -ID
 	$ScheduledTasksCredential = New-Object System.Management.Automation.PSCredential ("system", (new-object System.Security.SecureString))
 	Install-PowerShellApplication -RepetitionIntervalName EverWorkdayAt1PM -ModuleName TervisCustomyzer -TervisModuleDependencies PasswordstatePowershell,
 		PowerShellORM,
