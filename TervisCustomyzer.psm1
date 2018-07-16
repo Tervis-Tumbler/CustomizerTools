@@ -8,13 +8,13 @@ function Get-CustomyzerEnvironment {
 	$Environment = $CustomyzerEnvionrments |
 	Where-Object Name -EQ $EnvironmentName
 
-	$Environment | 
+	$Environment |
 	Add-Member -MemberType NoteProperty -Name CustomyzerDBConnectionString -Force -PassThru -Value (
-		Get-TervisPasswordstatePassword -Guid $Environment.CustomyzerDatabasePasswordStatePasswordGUID -PropertyMapName MSSQLDatabase |
+		Get-TervisPasswordstatePassword -Guid $Environment.CustomyzerDatabasePasswordStatePasswordGUID -PropertyMapName MSSQLDatabase -PasswordListID $Environment.PasswordListID |
 		ConvertTo-MSSQLConnectionString
 	) |
 	Add-Member -MemberType NoteProperty -Name EmailAddressToRecieveXLSX -Force -PassThru -Value (
-		Get-TervisPasswordstatePassword -Guid $Environment.EmailAddressToRecieveXLSXPasswordStatePasswordGUID |
+		Get-TervisPasswordstatePassword -Guid $Environment.EmailAddressToRecieveXLSXPasswordStatePasswordGUID -PasswordListID $Environment.PasswordListID |
 		Select-Object -ExpandProperty Password
 	)
 }
@@ -458,16 +458,6 @@ function New-CustomyzerBatchNumber {
 	(Get-Date).ToString("yyyyMMdd-HHmm")
 }
 
-function New-CustomyzerPacklistBatch {
-	$PackListLinesNotInBatch = Get-CustomyzerApprovalPackList -NotInBatch
-
-	if ($PackListLinesNotInBatch) {
-		$BatchNumber = New-CustomyzerBatchNumber
-		$PackListLinesNotInBatch | Set-CustomyzerApprovalPackList -BatchNumber $BatchNumber
-		$BatchNumber
-	}
-}
-
 function Invoke-CutomyzerPackListProcess {
 	param (
 		$EnvironmentName
@@ -478,6 +468,16 @@ function Invoke-CutomyzerPackListProcess {
 		$DocumentFilePaths = Invoke-CustomyzerPackListDocumentsGenerate -BatchNumber $BatchNumber -DateTime $DateTime
 		$DocumentFilePaths |
 		Send-CustomyzerPackListDocument -EnvironmentName $EnvironmentName -DateTime $DateTime
+	}
+}
+
+function New-CustomyzerPacklistBatch {
+	$PackListLinesNotInBatch = Get-CustomyzerApprovalPackList -NotInBatch
+
+	if ($PackListLinesNotInBatch) {
+		$BatchNumber = New-CustomyzerBatchNumber
+		$PackListLinesNotInBatch | Set-CustomyzerApprovalPackList -BatchNumber $BatchNumber
+		$BatchNumber
 	}
 }
 
@@ -894,16 +894,34 @@ function Install-CustomyzerPackListGenerationApplication {
 		[Parameter(Mandatory)]$EnvironmentName,
 		[Parameter(Mandatory)]$ComputerName
 	)
-	$PassswordstateAPIKey = Get-PasswordstatePassword -ID
-	$ScheduledTasksCredential = New-Object System.Management.Automation.PSCredential ("system", (new-object System.Security.SecureString))
-	Install-PowerShellApplication -RepetitionIntervalName EverWorkdayAt1PM -ModuleName TervisCustomyzer -TervisModuleDependencies PasswordstatePowershell,
-		PowerShellORM,
-		InvokeSQL,
-		TervisMicrosoft.PowerShell.Security,
-		TervisMicrosoft.PowerShell.Utility,
-		TervisPasswordstate,
-		WebServicesPowerShellProxyBuilder -PowerShellGalleryDependencies ImportExcel -ComputerName $ComputerName -CommandString @"
+	$Environment = Get-CustomyzerEnvironment -EnvironmentName $EnvironmentName
+	$PassswordstateAPIKey = Get-TervisPasswordstatePassword -Guid $Environment.PasswordStateAPIKeyPasswordGUID |
+	Select-Object -ExpandProperty Password
+	
+	$PowerShellApplicationParameters = @{
+		ComputerName = $ComputerName
+		EnvironmentName = $EnvironmentName
+		ModuleName = "TervisCustomyzer"
+		RepetitionIntervalName = "EverWorkdayAt1PM"
+		ScheduledTasksCredential = New-Crednetial -Username system
+		ScheduledTaskName = "CustomyzerPackListGeneration $EnvironmentName"
+		TervisModuleDependencies = @"
+PowerShellORM
+InvokeSQL
+TervisMicrosoft.PowerShell.Security
+TervisMicrosoft.PowerShell.Utility
+PasswordstatePowerShell
+TervisPasswordstatePowerShell
+WebServicesPowerShellProxyBuilder
+"@ -split "`r`n"
+	PowerShellGalleryDependencies = "ImportExcel"
+	CommandString = @"
+Set-PasswordstateAPIKey -APIKey $PassswordstateAPIKey
+Set-PasswordstateAPIType -APIType Standard
 Set-CustomyzerModuleEnvironment -Name $EnvironmentName
 Invoke-CutomyzerPackListProcess -EnvironmentName $EnvironmentName
-"@ -ScheduledTasksCredential $ScheduledTasksCredential -ScheduledTaskName "CustomyzerPackListGeneration $EnvironmentName"
+"@
+	}
+
+	Install-PowerShellApplication @PowerShellApplicationParameters
 }
