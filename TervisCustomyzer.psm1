@@ -780,32 +780,19 @@ function Set-CustomyzerApprovalPackList {
 
 function Get-CustomyzerApprovalOrderDetail {
 	param(
-		[Parameter(ValueFromPipelineByPropertyName)]$OrderDetailID
+		[Parameter(ValueFromPipelineByPropertyName)]$OrderDetailID,
+		[Parameter(ValueFromPipelineByPropertyName)]$OrderID
 	)
-	begin {
-		$ArrayList = New-Object System.Collections.ArrayList
-	}
 	process {
-		$ArrayList.Add($OrderDetailID.Guid) | Out-Null
-	}
-	end {
-		$ParametersParameter = if ($OrderDetailID) {
-			@{
-				Parameter = @{OrderDetailID = $ArrayList}
-			}
-		} else { @{} }
-		
-		$SQLCommand = New-SQLSelect -SchemaName Approval -TableName OrderDetail @ParametersParameter
+		$SQLCommand = New-SQLSelect -SchemaName Approval -TableName OrderDetail -Parameters $PSBoundParameters
 
 		Invoke-CustomyzerSQL -SQLCommand $SQLCommand |
-		Add-Member -MemberType ScriptProperty -Name Project -Force -PassThru -Value {
-			$This | Add-Member -MemberType NoteProperty -Name Project -Force -Value $($This | Get-CustomyzerProject)
-			$This.Project
+		Add-TervisMember -MemberType ScriptProperty -Name Project -Force -PassThru -CacheValue -Value {
+			$This | Get-CustomyzerProject
 		} |
-		Add-Member -MemberType ScriptProperty -Name Order -Force -PassThru -Value {
-			$This | Add-Member -MemberType NoteProperty -Name Order -Force -Value $($This | Get-CustomyzerApprovalOrder)
-			$This.Order
-		}
+		Add-TervisMember -MemberType ScriptProperty -Name Order -Force -PassThru -CacheValue -Value {
+			$This | Get-CustomyzerApprovalOrder
+		}	
 	}
 }
 
@@ -866,7 +853,11 @@ function Get-CustomyzerApprovalOrder {
 	)
 	process {
 		$SQLCommand = New-SQLSelect -SchemaName Approval -TableName Order -Parameters $PSBoundParameters
-		Invoke-CustomyzerSQL -SQLCommand $SQLCommand
+		Invoke-CustomyzerSQL -SQLCommand $SQLCommand |
+		Add-Member -MemberType ScriptProperty -Name OrderDetail -Force -PassThru -Value {
+			$This | Add-Member -MemberType NoteProperty -Name OrderDetail -Force -Value $($This | Get-CustomyzerApprovalOrderDetail)
+			$This.Project
+		}
 	}
 }
 
