@@ -861,7 +861,7 @@ function Get-CustomyzerApprovalOrder {
 	}
 }
 
-function Invoke-CustomzerHelpSQL {
+function Invoke-CustomyzerHelpSQL {
 
 @"	
 SELECT MAX(pl.CreatedDateUTC) AS LastScheduledItemImported, 
@@ -915,4 +915,19 @@ Invoke-CutomyzerPackListProcess -EnvironmentName $EnvironmentName
 	}
 
 	Install-PowerShellApplication @PowerShellApplicationParameters
+}
+
+function Get-CustomyzerScence7ImageURL {
+    param (
+        $OrderNumber,
+        $ProjectID = "9e733f21-ca49-4ba1-8efa-ea07b4b6d63e",
+        $CupSizeOz = 16,
+        [Switch]$WhiteLayer
+    )
+    #"https://images.tervis.com/is/image/tervis?layer=0&src=is(tervisRender/$($CupSizeOz)oz_final_x2_v1?layer=1&src=ir(tervisRender/16_Warp_trans?&obj=group&decal&src=is(tervisRender/16oz_base2?.BG&layer=5&anchor=0,0&src=is(tervisRender/ugc/prj-$ProjectID.tif))&show&res=300&req=object&fmt=png-alpha,rgb))&`$prj-id=$OrderNumber&fmt=png-alpha,rgb&scl=1"
+    if (-not $WhiteLayer) {
+        "https://images.tervis.com/is/image/tervis?layer=0&src=is(tervisRender/$($CupSizeOz)oz_final_x2_v1?layer=1&src=ir(tervisRender/16_Warp_trans?&obj=group&decal&src=is(tervisRender/16oz_base2?.BG&layer=5&anchor=0,0&src=is(tervisRender/ugc/prj-$ProjectID.tif))&show&res=300&req=object&fmt=png-alpha,rgb))&`$order_number=$OrderNumber&fmt=png-alpha,rgb&scl=1&printRes=300​​​​​​​"
+    } else {
+        "https://images.tervis.com/is/image/tervis?layer=0&src=is(tervisRender/$($CupSizeOz)oz_wrap_mask?&layer=1&mask=is(tervisRender/16oz_final_x2_v1?layer=1&src=is(tervisRender?&src=ir(tervisRender/16_Warp_trans?&obj=group&decal&src=is(tervisRender/16oz_base2?.BG&layer=5&anchor=0,0&src=is(tervisRender/ugc/prj-$ProjectID.tif))&show&res=300&req=object&fmt=png-alpha)&op_grow=-2)&scl=1)&`$order_number=$OrderNumber)&scl=1&fmt=png8&quantize=adaptive,off,2,ffffff,000000&printRes=300"
+    }
 }
