@@ -49,16 +49,6 @@ function Invoke-CustomyzerSQL {
     Invoke-MSSQL -ConnectionString $Environment.CustomyzerDBConnectionString -sqlCommand $SQLCommand -ConvertFromDataRow
 }
 
-function Get-CustomyzerApprovalOrder {
-    param (
-        $ERPOrderNumber
-    )
-    Invoke-CustomyzerSQL -SQLCommand @"
-Select *
-From [Approval].[Order] With (NoLock)
-Where [ERPOrderNumber] in ('$ERPOrderNumber')
-"@
-}
 
 function Get-CustomyzerApprovalReviewEventLogLast10InStatusID10 {
     Invoke-CustomyzerSQL -SQLCommand @"
@@ -849,7 +839,8 @@ function Get-CustomyzerForm {
 
 function Get-CustomyzerApprovalOrder {
 	param(
-		[Parameter(ValueFromPipelineByPropertyName)]$OrderID
+		[Parameter(ValueFromPipelineByPropertyName)]$OrderID,
+		[Parameter(ValueFromPipelineByPropertyName)]$ERPOrderNumber
 	)
 	process {
 		$SQLCommand = New-SQLSelect -SchemaName Approval -TableName Order -Parameters $PSBoundParameters
