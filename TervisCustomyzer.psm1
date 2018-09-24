@@ -847,7 +847,7 @@ function Get-CustomyzerApprovalOrder {
 		Invoke-CustomyzerSQL -SQLCommand $SQLCommand |
 		Add-Member -MemberType ScriptProperty -Name OrderDetail -Force -PassThru -Value {
 			$This | Add-Member -MemberType NoteProperty -Name OrderDetail -Force -Value $($This | Get-CustomyzerApprovalOrderDetail)
-			$This.Project
+			$This.OrderDetail
 		}
 	}
 }
