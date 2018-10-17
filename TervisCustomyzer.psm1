@@ -68,19 +68,6 @@ order by [Approval].[Order].[SubmitDateUTC] desc
 "@
 }
 
-function Get-CustomyzerApprovalOrderDetail {
-    param (
-        $ERPOrderNumber
-    )
-    Invoke-CustomyzerSQL -SQLCommand @"
-Select *
-From [Approval].[Order] With (NoLock)
-Join [Approval].[OrderDetail] With (NoLock)
-on [Approval].[Order].OrderID = [Approval].[OrderDetail].OrderID
-Where [Approval].[Order].[ERPOrderNumber] in ('$ERPOrderNumber')
-"@
-}
-
 function Get-CustomyzerIntegrationsOrdersFromEBS {
     param (
         $ERPOrderNumber
