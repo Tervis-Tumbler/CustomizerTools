@@ -710,10 +710,10 @@ function Send-CustomyzerPackListDocument {
 function Get-CustomyzerApprovalPacklistRecentBatch {
 	$SQLCommand = @"
 SELECT distinct top 10 [BatchNumber]
-FROM [Approval].[PackList]
---Where [CreatedDateUTC] > '$((Get-Date).AddDays(-14).ToString("yyyy-MM-dd"))'
+FROM [Approval].[PackList] (nolock)
+Where [CreatedDateUTC] > '$((Get-Date).AddDays(-14).ToString("yyyy-MM-dd"))'
 "@
-	Invoke-CustomyzerSQL -SQLCommand $SQLCommand
+	Invoke-CustomyzerSQL -SQLCommand $SQLCommand | Sort-Object -Property BatchNumber -Descending
 }
 
 function Get-CustomyzerApprovalPackList {
@@ -758,7 +758,8 @@ function Set-CustomyzerApprovalPackList {
 function Get-CustomyzerApprovalOrderDetail {
 	param(
 		[Parameter(ValueFromPipelineByPropertyName)]$OrderDetailID,
-		[Parameter(ValueFromPipelineByPropertyName)]$OrderID
+		[Parameter(ValueFromPipelineByPropertyName)]$OrderID,
+		$ProjectID
 	)
 	process {
 		$SQLCommand = New-SQLSelect -SchemaName Approval -TableName OrderDetail -Parameters $PSBoundParameters
