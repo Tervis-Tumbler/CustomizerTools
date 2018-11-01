@@ -895,3 +895,9 @@ Invoke-CutomyzerPackListProcess -EnvironmentName $EnvironmentName
 
 	Install-PowerShellApplication @PowerShellApplicationParameters
 }
+
+function Get-CustomyzerPrintURLsFromXML {
+	$Content = get-content "C:\TervisPackList-20181101-1300.xml"
+	$XML = [xml]$Content
+	$XML.packList.orders.order.filename."#cdata-section" | Out-File URLs.txt
+}
