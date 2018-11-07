@@ -484,8 +484,8 @@ function New-CustomyzerPackListTemporaryFolder {
 	param (
 		[Parameter(Mandatory)]$BatchNumber
 	)
-	$TemporaryFolderPath = "$Env:TEMP\$BatchNumber"
-	Remove-Item -Path $TemporaryFolderPath -Force -Recurse -ErrorAction SilentlyContinue
+	$TemporaryFolderPath = "$([System.IO.Path]::GetTempPath())\$BatchNumber"
+	Remove-Item -LiteralPath $TemporaryFolderPath -Force -Recurse -ErrorAction SilentlyContinue
 	New-Item -ItemType Directory -Path $TemporaryFolderPath -Force
 }
 
