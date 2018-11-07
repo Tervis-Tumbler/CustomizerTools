@@ -441,7 +441,7 @@ function Invoke-CutomyzerPackListProcess {
 	)
 	$BatchNumber = New-CustomyzerPacklistBatch
 	if ($BatchNumber) {
-		$DateTime = (Get-Date)
+		$DateTime = Get-Date
 		$DocumentFilePaths = Invoke-CustomyzerPackListDocumentsGenerate -BatchNumber $BatchNumber -DateTime $DateTime
 		$DocumentFilePaths |
 		Send-CustomyzerPackListDocument -EnvironmentName $EnvironmentName -DateTime $DateTime
