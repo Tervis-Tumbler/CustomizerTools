@@ -639,7 +639,7 @@ function New-CustomyzerPurchaseRequisitionCSV {
 
 	$RecordToWriteToCSV = foreach ($PackListLine in $PackListLines) {
 		[PSCustomObject]@{
-			ITEM_NUMBER = $PackListLine.OrderDetail.Project.FinalFGCode
+			ITEM_NUMBER = $PackListLine.OrderDetail.Project.Product.FGCode
 			INTERFACE_SOURCECODE = "MIZER_REQ_IMPORT"
 			SALES_ORDER_NO = $PackListLine.OrderDetail.Order.ERPOrderNumber
 			SO_LINE_NO =$PackListLine.OrderDetail.ERPOrderLineNumber
