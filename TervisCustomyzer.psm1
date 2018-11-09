@@ -874,7 +874,7 @@ function Install-CustomyzerPackListGenerationApplication {
 		ModuleName = "TervisCustomyzer"
 		RepetitionIntervalName = "EverWorkdayAt1PM"
 		ScheduledTasksCredential = New-Crednetial -Username system
-		ScheduledTaskName = "CustomyzerPackListGeneration $EnvironmentName"
+		ScheduledTaskName = "CustomyzerPackListGeneration"
 		TervisModuleDependencies = @"
 PowerShellORM
 InvokeSQL
