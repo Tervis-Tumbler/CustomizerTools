@@ -20,6 +20,9 @@ function Get-CustomyzerEnvironment {
 	Add-Member -MemberType NoteProperty -Name EmailAddressToRecieveXLSX -Force -PassThru -Value (
 		Get-TervisPasswordstatePassword -Guid $Environment.EmailAddressToRecieveXLSXPasswordStatePasswordGUID -PasswordListID $Environment.PasswordListID |
 		Select-Object -ExpandProperty Password
+	) |
+	Add-Member -MemberType NoteProperty -Name FileShareAccount -Force -PassThru -Value (
+		Get-TervisPasswordstatePassword -Guid $Environment.FileShareAccountPasswordStateGUID -PasswordListID $Environment.PasswordListID -AsCredential
 	)
 }
 
@@ -700,14 +703,19 @@ function Send-CustomyzerPackListDocument {
 		}
 		Send-TervisMailMessage @MailMessageParameters -BodyAsHTML
 
-		Copy-Item -Path $XMLFilePath -Destination $CustomyzerEnvironment.PackListXMLDestinationPath -Force
+		New-PSDrive -Name PackListXMLDestination -PSProvider FileSystem -Root $CustomyzerEnvironment.PackListXMLDestinationPath -Credential $CustomyzerEnvironment.FileShareAccount
+		Copy-Item -Path $XMLFilePath -Destination PackListXMLDestination:\ -Force
+		Remove-PSDrive -Name PackListXMLDestination
 
 		Set-TervisEBSEnvironment -Name $EnvironmentName
 		$EBSIASNode = Get-EBSIASNode
 		Set-SFTPFile -RemotePath $CustomyzerEnvironment.RequisitionDestinationPath -LocalFile $CSVFilePath -SFTPSession $EBSIASNode.SFTPSession -Overwrite:$Overwrite
 
 		$ArchivePath = "$($CustomyzerEnvironment.PackListFilesPathRoot)\Inbound\PackLists\Archive"
-		$XLSXFilePath,$XMLFilePath,$CSVFilePath | Copy-Item -Destination $ArchivePath -Force
+
+		New-PSDrive -Name Archive -PSProvider FileSystem -Root $ArchivePath -Credential $CustomyzerEnvironment.FileShareAccount
+		$XLSXFilePath,$XMLFilePath,$CSVFilePath | Copy-Item -Destination Archive:\ -Force
+		Remove-PSDrive -Name Archive
 	}
 }
 
@@ -883,6 +891,7 @@ function Install-CustomyzerPackListGenerationApplication {
 OracleE-BusinessSuitePowerShell
 PowerShellORM
 InvokeSQL
+TervisApplication
 TervisMailMessage
 TervisMicrosoft.PowerShell.Security
 TervisMicrosoft.PowerShell.Utility
