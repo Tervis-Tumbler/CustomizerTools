@@ -703,7 +703,7 @@ function Send-CustomyzerPackListDocument {
 		}
 		Send-TervisMailMessage @MailMessageParameters -BodyAsHTML
 
-		New-PSDrive -Name PackListXMLDestination -PSProvider FileSystem -Root $CustomyzerEnvironment.PackListXMLDestinationPath -Credential $CustomyzerEnvironment.FileShareAccount
+		New-PSDrive -Name PackListXMLDestination -PSProvider FileSystem -Root $CustomyzerEnvironment.PackListXMLDestinationPath -Credential $CustomyzerEnvironment.FileShareAccount | Out-Null
 		Copy-Item -Path $XMLFilePath -Destination PackListXMLDestination:\ -Force
 		Remove-PSDrive -Name PackListXMLDestination
 
@@ -713,7 +713,7 @@ function Send-CustomyzerPackListDocument {
 
 		$ArchivePath = "$($CustomyzerEnvironment.PackListFilesPathRoot)\Inbound\PackLists\Archive"
 
-		New-PSDrive -Name Archive -PSProvider FileSystem -Root $ArchivePath -Credential $CustomyzerEnvironment.FileShareAccount
+		New-PSDrive -Name Archive -PSProvider FileSystem -Root $ArchivePath -Credential $CustomyzerEnvironment.FileShareAccount | Out-Null
 		$XLSXFilePath,$XMLFilePath,$CSVFilePath | Copy-Item -Destination Archive:\ -Force
 		Remove-PSDrive -Name Archive
 	}
