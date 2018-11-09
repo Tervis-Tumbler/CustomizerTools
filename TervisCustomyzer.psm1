@@ -1,4 +1,8 @@
-﻿$ModulePath = (Get-Module -ListAvailable TervisCustomyzer).ModuleBase
+﻿$ModulePath = if ($PSScriptRoot) {
+	$PSScriptRoot
+} else {
+	(Get-Module -ListAvailable TervisCustomyzer).ModuleBase
+}
 . $ModulePath\Definition.ps1
 
 function Get-CustomyzerEnvironment {
@@ -876,15 +880,21 @@ function Install-CustomyzerPackListGenerationApplication {
 		ScheduledTasksCredential = New-Crednetial -Username system
 		ScheduledTaskName = "CustomyzerPackListGeneration"
 		TervisModuleDependencies = @"
+OracleE-BusinessSuitePowerShell
 PowerShellORM
 InvokeSQL
+TervisMailMessage
 TervisMicrosoft.PowerShell.Security
 TervisMicrosoft.PowerShell.Utility
+TervisOracleE-BusinessSuitePowerShell
 PasswordstatePowerShell
 TervisPasswordstatePowerShell
 WebServicesPowerShellProxyBuilder
 "@ -split "`r`n"
-	PowerShellGalleryDependencies = "ImportExcel"
+	PowerShellGalleryDependencies = @"
+ImportExcel
+posh-ssh
+"@ -split "`r`n"
 	CommandString = @"
 Set-PasswordstateAPIKey -APIKey $PassswordstateAPIKey
 Set-PasswordstateAPIType -APIType Standard
