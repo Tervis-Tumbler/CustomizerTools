@@ -615,7 +615,7 @@ function New-CustomyzerPackListXML {
 						New-XMLElement -Name salesLineNumber -InnerText $PackListLine.OrderDetail.ERPOrderLineNumber
 						New-XMLElement -Name itemQuantity -InnerText $PackListLine.Quantity
 						New-XMLElement -Name size -InnerText $PackListLine.SizeAndFormType
-						New-XMLElement -Name itemNumber -InnerText $PackListLine.OrderDetail.Project.FinalFGCode
+						New-XMLElement -Name itemNumber -InnerText $PackListLine.OrderDetail.Project.Product.FGCode
 						New-XMLElement -Name scheduleNumber -InnerText $PackListLine.ScheduleNumber
 						New-XMLElement -Name fileName -InnerElements ( New-XMLCDATA -Value $PackListLine.OrderDetail.Project.FinalArchedImageLocation )
 					}
