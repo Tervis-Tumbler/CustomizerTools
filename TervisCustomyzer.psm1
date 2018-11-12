@@ -830,7 +830,8 @@ function Get-CustomyzerProjectFinalFGCode {
 		[Parameter(Mandatory,ValueFromPipeLine)]$Project
 	)
 	process {
-		if ($Project.Product_Background.PurchaseFG) {
+		#.BackgroundID test required as otherwise the Product_Background table is queried without BackgroundID in the preciate as opposed to a predicate that includes BackgroundID = ""
+		if ($Project.BackgroundID -and $Project.Product_Background.PurchaseFG) {
 			$Project.Product_Background.PurchaseFG
 		} else {
 			$Project.Product.FGCode
