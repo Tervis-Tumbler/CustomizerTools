@@ -622,7 +622,7 @@ function New-CustomyzerPackListXML {
 						New-XMLElement -Name salesLineNumber -InnerText $PackListLine.OrderDetail.ERPOrderLineNumber
 						New-XMLElement -Name itemQuantity -InnerText $PackListLine.Quantity
 						New-XMLElement -Name size -InnerText $PackListLine.SizeAndFormType
-						New-XMLElement -Name itemNumber -InnerText $PackListLine.OrderDetail.Project.Product.FGCode
+						New-XMLElement -Name itemNumber -InnerText $PackListLine.OrderDetail.Project.FinalFGCode
 						New-XMLElement -Name scheduleNumber -InnerText $PackListLine.ScheduleNumber
 						New-XMLElement -Name fileName -InnerElements ( New-XMLCDATA -Value $PackListLine.OrderDetail.Project.FinalArchedImageLocation )
 					}
@@ -646,7 +646,7 @@ function New-CustomyzerPurchaseRequisitionCSV {
 
 	$RecordToWriteToCSV = foreach ($PackListLine in $PackListLines) {
 		[PSCustomObject]@{
-			ITEM_NUMBER = $PackListLine.OrderDetail.Project.Product.FGCode
+			ITEM_NUMBER = $PackListLine.OrderDetail.Project.FinalFGCode
 			INTERFACE_SOURCECODE = "MIZER_REQ_IMPORT"
 			SALES_ORDER_NO = $PackListLine.OrderDetail.Order.ERPOrderNumber
 			SO_LINE_NO =$PackListLine.OrderDetail.ERPOrderLineNumber
@@ -809,7 +809,30 @@ function Get-CustomyzerProject {
 		Add-Member -MemberType ScriptProperty -Name Product -Force -PassThru -Value {
 			$This | Add-Member -MemberType NoteProperty -Name Product -Force -Value $($This | Get-CustomyzerProduct)
 			$This.Product
+		} |
+		Add-Member -MemberType ScriptProperty -Name Background -Force -PassThru -Value {
+			$This | Add-Member -MemberType NoteProperty -Name Background -Force -Value $($This | Get-CustomyzerBackground)
+			$This.Background
+		} |
+		Add-Member -MemberType ScriptProperty -Name Product_Background -Force -PassThru -Value {
+			$This | Add-Member -MemberType NoteProperty -Name Product_Background -Force -Value $($This | Get-CustomyzerProduct_Background)
+			$This.Product_Background
+		} |
+		Add-Member -MemberType ScriptProperty -Name FinalFGCode -Force -PassThru -Value {
+			$This | Add-Member -MemberType NoteProperty -Name FinalFGCode -Force -Value $($This | Get-CustomyzerProjectFinalFGCode)
+			$This.FinalFGCode
 		}
+	}
+}
+
+function Get-CustomyzerProjectFinalFGCode {
+	param (
+		[Parameter(Mandatory,ValueFromPipeLine)]$Project
+	)
+	if ($Project.Product_Background.PurchaseFG) {
+		$Project.Product_Background.PurchaseFG
+	} else {
+		$Project.Product.FGCode
 	}
 }
 
@@ -824,6 +847,27 @@ function Get-CustomyzerProduct {
 			$This | Add-Member -MemberType NoteProperty -Name Form -Force -Value $($This | Get-CustomyzerForm)
 			$This.Form
 		}
+	}
+}
+
+function Get-CustomyzerBackground {
+	param(
+		[Parameter(ValueFromPipelineByPropertyName)]$BackgroundID
+	)
+	process {
+		$SQLCommand = New-SQLSelect -TableName Background -Parameters $PSBoundParameters
+		Invoke-CustomyzerSQL -SQLCommand $SQLCommand
+	}
+}
+
+function Get-CustomyzerProduct_Background {
+	param(
+		[Parameter(ValueFromPipelineByPropertyName)]$BackgroundID,
+		[Parameter(ValueFromPipelineByPropertyName)]$ProductID
+	)
+	process {
+		$SQLCommand = New-SQLSelect -TableName Product_Background -Parameters $PSBoundParameters
+		Invoke-CustomyzerSQL -SQLCommand $SQLCommand
 	}
 }
 
