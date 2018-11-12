@@ -829,10 +829,12 @@ function Get-CustomyzerProjectFinalFGCode {
 	param (
 		[Parameter(Mandatory,ValueFromPipeLine)]$Project
 	)
-	if ($Project.Product_Background.PurchaseFG) {
-		$Project.Product_Background.PurchaseFG
-	} else {
-		$Project.Product.FGCode
+	process {
+		if ($Project.Product_Background.PurchaseFG) {
+			$Project.Product_Background.PurchaseFG
+		} else {
+			$Project.Product.FGCode
+		}	
 	}
 }
 
