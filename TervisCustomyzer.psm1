@@ -449,7 +449,7 @@ function Invoke-CutomyzerPackListProcess {
 	$BatchNumber = New-CustomyzerPacklistBatch
 	if ($BatchNumber) {
 		$DateTime = Get-Date
-		$DocumentFilePaths = Invoke-CustomyzerPackListDocumentsGenerate -BatchNumber $BatchNumber -DateTime $DateTime
+		$DocumentFilePaths = Invoke-CustomyzerPackListDocumentsGenerate -BatchNumber $BatchNumber -DateTime $DateTime -EnvironmentName $EnvironmentName
 		$DocumentFilePaths |
 		Send-CustomyzerPackListDocument -EnvironmentName $EnvironmentName -DateTime $DateTime -BatchNumber $BatchNumber
 	}
@@ -468,11 +468,12 @@ function New-CustomyzerPacklistBatch {
 function Invoke-CustomyzerPackListDocumentsGenerate {
 	param (
 		[Parameter(Mandatory)]$BatchNumber,
-		$DateTime = (Get-Date)
+		$DateTime = (Get-Date),
+		[Parameter(Mandatory)]$EnvironmentName
 	)
 	$PackListLines = Get-CustomyzerApprovalPackList -BatchNumber $BatchNumber
 	$PackListLinesSorted = Invoke-CustomyzerPackListLinesSort -PackListLines $PackListLines
-	$CustomyzerPackListTemporaryFolder = New-CustomyzerPackListTemporaryFolder -BatchNumber $BatchNumber
+	$CustomyzerPackListTemporaryFolder = New-CustomyzerPackListTemporaryFolder -BatchNumber $BatchNumber -EnvironmentName $EnvironmentName
 
 	$Parameters = @{
 		BatchNumber = $BatchNumber
@@ -489,9 +490,10 @@ function Invoke-CustomyzerPackListDocumentsGenerate {
 
 function New-CustomyzerPackListTemporaryFolder {
 	param (
-		[Parameter(Mandatory)]$BatchNumber
+		[Parameter(Mandatory)]$BatchNumber,
+		[Parameter(Mandatory)]$EnvironmentName
 	)
-	$TemporaryFolderPath = "$([System.IO.Path]::GetTempPath())\$BatchNumber"
+	$TemporaryFolderPath = "$([System.IO.Path]::GetTempPath())\$EnvironmentName-$BatchNumber"
 	Remove-Item -LiteralPath $TemporaryFolderPath -Force -Recurse -ErrorAction SilentlyContinue
 	New-Item -ItemType Directory -Path $TemporaryFolderPath -Force
 }
@@ -933,7 +935,7 @@ function Install-CustomyzerPackListGenerationApplication {
 		ComputerName = $ComputerName
 		EnvironmentName = $EnvironmentName
 		ModuleName = "TervisCustomyzer"
-		RepetitionIntervalName = "EverWorkdayAt1PM"
+		RepetitionIntervalName = $Environment.ScheduledTaskRepetitionIntervalName
 		ScheduledTasksCredential = New-Crednetial -Username system
 		ScheduledTaskName = "CustomyzerPackListGeneration"
 		TervisModuleDependencies = @"
