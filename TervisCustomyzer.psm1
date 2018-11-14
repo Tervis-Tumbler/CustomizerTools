@@ -460,7 +460,7 @@ function New-CustomyzerPacklistBatch {
 
 	if ($PackListLinesNotInBatch) {
 		$BatchNumber = New-CustomyzerBatchNumber
-		$PackListLinesNotInBatch | Set-CustomyzerApprovalPackList -BatchNumber $BatchNumber
+		$PackListLinesNotInBatch | Set-CustomyzerApprovalPackList -BatchNumber $BatchNumber -SentDateUTC (Get-Date).ToUniversalTime()
 		$BatchNumber
 	}
 }
@@ -759,10 +759,12 @@ function Get-CustomyzerApprovalPackList {
 function Set-CustomyzerApprovalPackList {
 	param (
 		[Parameter(Mandatory,ValueFromPipelineByPropertyName)]$PackListID,
-		$BatchNumber
+		$BatchNumber,
+		$SentDateUTC
 	)
 	process {
-		$SQLCommand = New-SQLUpdate -SchemaName Approval -TableName PackList -WhereParameters @{PackListID = $PackListID} -ValueParameters @{BatchNumber = $BatchNumber}
+		$ValueParameters = $PSBoundParameters | ConvertFrom-PSBoundParameters -Property BatchNumber,SentDateUTC -AsHashTable
+		$SQLCommand = New-SQLUpdate -SchemaName Approval -TableName PackList -WhereParameters @{PackListID = $PackListID} -ValueParameters $ValueParameters
 		Invoke-CustomyzerSQL -SQLCommand $SQLCommand
 	}
 }
