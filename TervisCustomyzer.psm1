@@ -668,3 +668,56 @@ function Get-CustomyzerWebToPrintImageFileName {
         "$Size$FormType-$ERPOrderNumber-$ERPOrderLineNumber.$Extension"
     }
 }
+
+function Get-CustomyzerImageTemplateName {
+    param (
+        [Parameter(Mandatory,ValueFromPipelineByPropertyName)]$Size,
+        [ValidateSet("SIP","SWG","WINE","WAV","DWT","DWT","MUG","BEER","DWT","WB")][Parameter(Mandatory,ValueFromPipelineByPropertyName)]$FormType,
+        [ValidateSet("Final","Mask","Vignette","Base","Print","FinalWithERPNumber","WhiteInkMask")][Parameter(Mandatory,ValueFromPipelineByPropertyName)]$TemplateType
+    )
+    DynamicParam {
+        if ($TemplateType -eq "Print") {
+            New-DynamicParameter -Name PrintTemplateType -ValidateSet "Illustrator","InDesign","Scene7"
+        }
+    }
+    process {
+        if (-not $Script:SizeAndFormTypeToImageTemplateNamesIndex) {
+            $Script:SizeAndFormTypeToImageTemplateNames |
+            Add-Member -MemberType ScriptProperty -Name SizeAndFormTypes -Force -Value {
+                $This.FormType |
+                ForEach-Object -Process {
+                    "$($This.Size)$_"
+                }
+            }
+            $Script:SizeAndFormTypeToImageTemplateNamesIndex = $Script:SizeAndFormTypeToImageTemplateNames |
+            New-HashTableIndex -PropertyToIndex SizeAndFormTypes
+        }
+
+        $Template = $Script:SizeAndFormTypeToImageTemplateNamesIndex."$Size$FormType".ImageTemplateName.$TemplateType
+        if (-not $PSBoundParameters.PrintTemplateType) {
+            $Template
+        } else {
+            $Template."$($PSBoundParameters.PrintTemplateType)"
+        }
+    }
+}
+
+function Get-CustomyzerPrintImageTemplateSizeAndFormType {
+    param (
+        $PrintImageTemplateName
+    )
+    if (-not $Script:PrintImageTemplateNameToSizeAndFormTypeIndex) {
+
+        $Script:SizeAndFormTypeToImageTemplateNames |
+        Add-Member -MemberType ScriptProperty -Name PrintImageTemplateNames -Force -Value {
+            $This.ImageTemplateName.Print.Values | 
+            Where-Object {$_}
+        }
+
+        $Script:PrintImageTemplateNameToSizeAndFormTypeIndex = $Script:SizeAndFormTypeToImageTemplateNames |
+        New-HashTableIndex -PropertyToIndex PrintImageTemplateNames
+    }
+
+    $Script:PrintImageTemplateNameToSizeAndFormTypeIndex.$PrintImageTemplateName |
+    Select-Object -Property Size, FormType
+}

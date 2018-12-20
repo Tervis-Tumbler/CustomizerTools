@@ -34,3 +34,172 @@ $CustomyzerEnvionrments = [PSCustomObject]@{
     FileShareAccountPasswordStateGUID = "4b8f6d82-82e1-4f21-a9ef-f7e83af4efc2"
     ScheduledTaskRepetitionIntervalName = "EverWorkdayAt2PM"
 }
+
+$Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
+    Size = 6
+    FormType = "SIP"
+    ImageTemplateName = [PSCustomObject]@{
+        Final = "6oz_wrap_final"
+        Mask = "6oz_wrap_mask"
+        Vignette = "6_Warp_trans"
+        Base = "6oz_base2"
+        Print = @{
+            Illustrator = "6_cstm_print.ai"
+            InDesign = ""
+            Scene7 = "6_cstm_print"
+        }
+    }
+},
+[PSCustomObject]@{
+    Size = 9
+    FormType = "SWG","WINE"
+    ImageTemplateName = [PSCustomObject]@{
+        Final = "9oz_wrap_final"
+        Mask = "9oz_wrap_mask"
+        Vignette = "9_Warp_trans"
+        Base = "9oz_base2"
+        Print = @{
+            Illustrator = "9_cstm_print.ai"
+            InDesign = ""
+            Scene7 = "9_cstm_print"
+        }
+    }
+},
+[PSCustomObject]@{
+    Size = 10
+    FormType = "WAV","DWT"
+    ImageTemplateName = [PSCustomObject]@{
+        Final = "10oz_wrap_final"
+        Mask = "10oz_wrap_mask"
+        Vignette = "10_Warp_trans"
+        Base = "10oz_base2"
+        Print = @{
+            Illustrator = "10_cstm_print.ai"
+            InDesign = ""
+            Scene7 = "10_cstm_print"
+        }
+    }
+},
+[PSCustomObject]@{
+    Size = 16
+    FormType = "DWT"
+    ImageTemplateName = [PSCustomObject]@{
+        Final = "16oz_wrap_final"
+        Mask = "16oz_wrap_mask"
+        Vignette = "16_Warp_trans"
+        Base = "16oz_base2"
+        FinalWithERPNumber = "16oz_final_x2_v1"
+        Print = @{
+            Illustrator = "16_cstm_print.ai"
+            InDesign = "16oz-cstm-print.idml"
+            Scene7 = "16_cstm_print"
+        }
+        WhiteInkMask = "16oz_wrap_mask_black"
+    }
+},
+[PSCustomObject]@{
+    Size = 16
+    FormType = "MUG"
+    ImageTemplateName = [PSCustomObject]@{
+        Final = "MUG_wrap_final"
+        Mask = "MUG_wrap_mask"
+        Vignette = "MUG_Warp_trans"
+        Base = "MUG_base2"
+        Print = @{
+            Illustrator = "MUG_cstm_print.ai"
+            InDesign = ""
+            Scene7 = "MUG_cstm_print"
+        }
+    }
+},
+[PSCustomObject]@{
+    Size = 16
+    FormType = "BEER"
+    ImageTemplateName = [PSCustomObject]@{
+        Final = "BEER_wrap_final"
+        Mask = "BEER_wrap_mask"
+        Vignette = "BEER_Warp_trans"
+        Base = "BEER_base2"
+        Print = @{
+            Illustrator = "BEER_cstm_print.ai"
+            InDesign = ""
+            Scene7 = "BEER_cstm_print"
+        }
+    }
+},
+[PSCustomObject]@{
+    Size = 24
+    FormType = "DWT"
+    ImageTemplateName = [PSCustomObject]@{
+        Final = "24oz_wrap_final"
+        Mask = "24oz_wrap_mask"
+        Vignette = "24_Warp_trans"
+        Base = "24oz_base2"
+        Print = @{
+            Illustrator = "24_cstm_print.ai"
+            InDesign = ""
+            Scene7 = "24_cstm_print"
+        }
+    }
+},
+[PSCustomObject]@{
+    Size = 24
+    FormType = "WB"
+    ImageTemplateName = [PSCustomObject]@{
+        Final = "WB_wrap_final"
+        Mask = "WB_wrap_mask"
+        Vignette = "WB_Warp_trans"
+        Base = "WB_base2"
+        Print = @{
+            Illustrator = "WB_cstm_print.ai"
+            InDesign = ""
+            Scene7 = "WB_cstm_print"
+        }
+    }
+}
+# ,
+# [PSCustomObject]@{
+#     Size = 30
+#     FormType = "SS"
+#     ImageTemplateName = [PSCustomObject]@{
+    #    Final = ""
+    #    Mask = ""
+    #    Vignette = ""
+    #    Base = ""
+    #    Print = @{
+        #     Illustrator = "SS30_cstm_print.ai"
+        #     InDesign = ""
+        #     Scene7 = "SS30_cstm_print"
+        # }
+    #}
+# },
+# [PSCustomObject]@{
+#     Size = 20
+#     FormType = "SS"
+#     ImageTemplateName = [PSCustomObject]@{
+    #    Final = ""
+    #    Mask = ""
+    #    Vignette = ""
+    #    Base = ""
+    #    Print = @{
+        #     Illustrator = "SS20_cstm_print.ai"
+        #     InDesign = ""
+        #     Scene7 = "SS20_cstm_print"
+        # }
+    #}
+# },
+# [PSCustomObject]@{
+#     Size = 24
+#     FormType = "SS"
+#     ImageTemplateName = [PSCustomObject]@{
+    #    Final = ""
+    #    Mask = ""
+    #    Vignette = ""
+    #    Base = ""
+    #    Print = @{
+        #     Illustrator = "SS24_cstm_print.ai"
+        #     InDesign = ""
+        #     Scene7 = "SS24_cstm_print"
+        # }
+    #}
+# }
