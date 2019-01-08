@@ -38,6 +38,14 @@ $CustomyzerEnvionrments = [PSCustomObject]@{
 $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
     Size = 6
     FormType = "SIP"
+    ArtBoardDimensions = [PSCustomObject]@{
+        Width = 2717
+        Height = 1750
+    }
+    PrintImageDimensions = [PSCustomObject]@{
+        Width = 3018
+        Height = 1873
+    }
     ImageTemplateName = [PSCustomObject]@{
         Final = "6oz_wrap_final"
         Mask = "6oz_wrap_mask"
@@ -45,7 +53,7 @@ $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
         Base = "6oz_base2"
         Print = @{
             Illustrator = "6_cstm_print.ai"
-            InDesign = ""
+            InDesign = "6SIP-cstm-print.idml"
             Scene7 = "6_cstm_print"
         }
     }
@@ -60,7 +68,7 @@ $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
         Base = "9oz_base2"
         Print = @{
             Illustrator = "9_cstm_print.ai"
-            InDesign = ""
+            InDesign = "9WINE-cstm-print.idml"
             Scene7 = "9_cstm_print"
         }
     }
@@ -75,7 +83,7 @@ $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
         Base = "10oz_base2"
         Print = @{
             Illustrator = "10_cstm_print.ai"
-            InDesign = ""
+            InDesign = "10WAV-cstm-print.idml"
             Scene7 = "10_cstm_print"
         }
     }
@@ -83,6 +91,14 @@ $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
 [PSCustomObject]@{
     Size = 16
     FormType = "DWT"
+    ArtBoardDimensions = [PSCustomObject]@{
+        Width = 2717
+        Height = 1750
+    }
+    PrintImageDimensions = [PSCustomObject]@{
+        Width = 3018
+        Height = 1873
+    }
     ImageTemplateName = [PSCustomObject]@{
         Final = "16oz_wrap_final"
         Mask = "16oz_wrap_mask"
@@ -91,7 +107,7 @@ $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
         FinalWithERPNumber = "16oz_final_x2_v1"
         Print = @{
             Illustrator = "16_cstm_print.ai"
-            InDesign = "16oz-cstm-print.idml"
+            InDesign = "16DWT-cstm-print.idml"
             Scene7 = "16_cstm_print"
         }
         WhiteInkMask = "16oz_wrap_mask_black"
@@ -107,7 +123,7 @@ $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
         Base = "MUG_base2"
         Print = @{
             Illustrator = "MUG_cstm_print.ai"
-            InDesign = ""
+            InDesign = "16MUG-cstm-print.idml"
             Scene7 = "MUG_cstm_print"
         }
     }
@@ -122,7 +138,7 @@ $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
         Base = "BEER_base2"
         Print = @{
             Illustrator = "BEER_cstm_print.ai"
-            InDesign = ""
+            InDesign = "16BEER-cstm-print.idml"
             Scene7 = "BEER_cstm_print"
         }
     }
@@ -137,7 +153,7 @@ $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
         Base = "24oz_base2"
         Print = @{
             Illustrator = "24_cstm_print.ai"
-            InDesign = ""
+            InDesign = "24DWT-cstm-print.idml"
             Scene7 = "24_cstm_print"
         }
     }
@@ -152,7 +168,7 @@ $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
         Base = "WB_base2"
         Print = @{
             Illustrator = "WB_cstm_print.ai"
-            InDesign = ""
+            InDesign = "24WB-cstm-print.idml"
             Scene7 = "WB_cstm_print"
         }
     }
@@ -168,7 +184,7 @@ $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
     #    Base = ""
     #    Print = @{
         #     Illustrator = "SS30_cstm_print.ai"
-        #     InDesign = ""
+        #     InDesign = "30SS-cstm-print.idml"
         #     Scene7 = "SS30_cstm_print"
         # }
     #}
@@ -183,7 +199,7 @@ $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
     #    Base = ""
     #    Print = @{
         #     Illustrator = "SS20_cstm_print.ai"
-        #     InDesign = ""
+        #     InDesign = "20SS-cstm-print.idml"
         #     Scene7 = "SS20_cstm_print"
         # }
     #}
@@ -198,7 +214,7 @@ $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
     #    Base = ""
     #    Print = @{
         #     Illustrator = "SS24_cstm_print.ai"
-        #     InDesign = ""
+        #     InDesign = "24SS-cstm-print.idml"
         #     Scene7 = "SS24_cstm_print"
         # }
     #}
