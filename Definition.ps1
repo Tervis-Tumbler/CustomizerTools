@@ -38,13 +38,13 @@ $CustomyzerEnvionrments = [PSCustomObject]@{
 $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
     Size = 6
     FormType = "SIP"
-    ArtBoardDimensions = [PSCustomObject]@{
-        Width = 2717
-        Height = 1750
-    }
+    # ArtBoardDimensions = [PSCustomObject]@{
+    #     Width = 
+    #     Height = 
+    # }
     PrintImageDimensions = [PSCustomObject]@{
-        Width = 3018
-        Height = 1873
+        Width = 2605
+        Height = 1051
     }
     ImageTemplateName = [PSCustomObject]@{
         Final = "6oz_wrap_final"
@@ -61,6 +61,10 @@ $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
 [PSCustomObject]@{
     Size = 9
     FormType = "SWG","WINE"
+    PrintImageDimensions = [PSCustomObject]@{
+        Width = 3260
+        Height = 962
+    }
     ImageTemplateName = [PSCustomObject]@{
         Final = "9oz_wrap_final"
         Mask = "9oz_wrap_mask"
@@ -76,6 +80,10 @@ $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
 [PSCustomObject]@{
     Size = 10
     FormType = "WAV","DWT"
+    PrintImageDimensions = [PSCustomObject]@{
+        Width = 2767
+        Height = 1640
+    }
     ImageTemplateName = [PSCustomObject]@{
         Final = "10oz_wrap_final"
         Mask = "10oz_wrap_mask"
@@ -96,7 +104,7 @@ $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
         Height = 1750
     }
     PrintImageDimensions = [PSCustomObject]@{
-        Width = 3018
+        Width = 3084
         Height = 1873
     }
     ImageTemplateName = [PSCustomObject]@{
@@ -116,6 +124,10 @@ $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
 [PSCustomObject]@{
     Size = 16
     FormType = "MUG"
+    PrintImageDimensions = [PSCustomObject]@{
+        Width = 3628
+        Height = 1339
+    }
     ImageTemplateName = [PSCustomObject]@{
         Final = "MUG_wrap_final"
         Mask = "MUG_wrap_mask"
@@ -131,6 +143,10 @@ $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
 [PSCustomObject]@{
     Size = 16
     FormType = "BEER"
+    PrintImageDimensions = [PSCustomObject]@{
+        Width = 3074
+        Height = 1748
+    }
     ImageTemplateName = [PSCustomObject]@{
         Final = "BEER_wrap_final"
         Mask = "BEER_wrap_mask"
@@ -146,6 +162,10 @@ $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
 [PSCustomObject]@{
     Size = 24
     FormType = "DWT"
+    PrintImageDimensions = [PSCustomObject]@{
+        Width = 3574
+        Height = 2402
+    }
     ImageTemplateName = [PSCustomObject]@{
         Final = "24oz_wrap_final"
         Mask = "24oz_wrap_mask"
@@ -161,6 +181,10 @@ $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
 [PSCustomObject]@{
     Size = 24
     FormType = "WB"
+    PrintImageDimensions = [PSCustomObject]@{
+        Width = 2977
+        Height = 2420
+    }
     ImageTemplateName = [PSCustomObject]@{
         Final = "WB_wrap_final"
         Mask = "WB_wrap_mask"
