@@ -196,50 +196,61 @@ $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
             Scene7 = "WB_cstm_print"
         }
     }
+}   ,
+[PSCustomObject]@{
+    Size = 30
+    FormType = "SS"
+    PrintImageDimensions = [PSCustomObject]@{
+        Width = 3394
+        Height = 2409
+    }
+    ImageTemplateName = [PSCustomObject]@{
+       Final = ""
+       Mask = "SS_30oz_wrap_mask"
+       Vignette = ""
+       Base = "SS_30oz_base2"
+       Print = @{
+            Illustrator = "SS30_cstm_print.ai"
+            InDesign = "30SS-cstm-print.idml"
+            Scene7 = "SS30_cstm_print"
+        }
+    }
+},
+[PSCustomObject]@{
+    Size = 20
+    FormType = "SS"
+    PrintImageDimensions = [PSCustomObject]@{
+        Width = 2974
+        Height = 2032
+    }
+    ImageTemplateName = [PSCustomObject]@{
+       Final = ""
+       Mask = "SS_20oz_wrap_mask"
+       Vignette = ""
+       Base = "SS_20oz_base2"
+       Print = @{
+            Illustrator = "SS20_cstm_print.ai"
+            InDesign = "20SS-cstm-print.idml"
+            Scene7 = "SS20_cstm_print"
+        }
+    }
+},
+[PSCustomObject]@{
+    Size = 24
+    FormType = "SS"
+    PrintImageDimensions = [PSCustomObject]@{
+        Width = 2916
+        Height = 2367
+    }
+    ImageTemplateName = [PSCustomObject]@{
+       Final = ""
+       Mask = "SS_24oz_wrap_mask"
+       Vignette = ""
+       Base = "SS_24oz_base2"
+       Print = @{
+            Illustrator = "SS24_cstm_print.ai"
+            InDesign = "24SS-cstm-print.idml"
+            Scene7 = "SS24_cstm_print"
+        }
+    }
 }
-# ,
-# [PSCustomObject]@{
-#     Size = 30
-#     FormType = "SS"
-#     ImageTemplateName = [PSCustomObject]@{
-    #    Final = ""
-    #    Mask = ""
-    #    Vignette = ""
-    #    Base = ""
-    #    Print = @{
-        #     Illustrator = "SS30_cstm_print.ai"
-        #     InDesign = "30SS-cstm-print.idml"
-        #     Scene7 = "SS30_cstm_print"
-        # }
-    #}
-# },
-# [PSCustomObject]@{
-#     Size = 20
-#     FormType = "SS"
-#     ImageTemplateName = [PSCustomObject]@{
-    #    Final = ""
-    #    Mask = ""
-    #    Vignette = ""
-    #    Base = ""
-    #    Print = @{
-        #     Illustrator = "SS20_cstm_print.ai"
-        #     InDesign = "20SS-cstm-print.idml"
-        #     Scene7 = "SS20_cstm_print"
-        # }
-    #}
-# },
-# [PSCustomObject]@{
-#     Size = 24
-#     FormType = "SS"
-#     ImageTemplateName = [PSCustomObject]@{
-    #    Final = ""
-    #    Mask = ""
-    #    Vignette = ""
-    #    Base = ""
-    #    Print = @{
-        #     Illustrator = "SS24_cstm_print.ai"
-        #     InDesign = "24SS-cstm-print.idml"
-        #     Scene7 = "SS24_cstm_print"
-        # }
-    #}
-# }
