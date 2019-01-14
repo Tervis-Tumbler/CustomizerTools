@@ -719,5 +719,5 @@ function Get-CustomyzerPrintImageTemplateSizeAndFormType {
     }
 
     $Script:PrintImageTemplateNameToSizeAndFormTypeIndex.$PrintImageTemplateName |
-    Select-Object -Property Size, FormType
+    Select-Object -Property Size, @{N="FormType";e={$_.FormType | Select-Object -First 1}}
 }
