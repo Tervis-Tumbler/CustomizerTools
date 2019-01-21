@@ -1,4 +1,4 @@
-﻿$ModulePath = if ($PSScriptRoot) {
+$ModulePath = if ($PSScriptRoot) {
 	$PSScriptRoot
 } else {
 	(Get-Module -ListAvailable TervisCustomyzer).ModuleBase
@@ -515,7 +515,7 @@ function Get-CustomyzerApprovalOrderDetail {
 
 function Get-CustomyzerProject {
 	param(
-		[Parameter(ValueFromPipelineByPropertyName)]$ProjectID
+		[Parameter(ValueFromPipelineByPropertyName)][GUID]$ProjectID
 	)
 	begin {
 		$ArrayList = New-Object System.Collections.ArrayList
@@ -548,6 +548,9 @@ function Get-CustomyzerProject {
 		Add-Member -MemberType ScriptProperty -Name FinalFGCode -Force -PassThru -Value {
 			$This | Add-Member -MemberType NoteProperty -Name FinalFGCode -Force -Value $($This | Get-CustomyzerProjectFinalFGCode)
 			$This.FinalFGCode
+		} |
+		Add-TervisMember -MemberType ScriptProperty -Name OrderDetail -Force -PassThru -CacheValue -Value {
+			$This | Get-CustomyzerApprovalOrderDetail
 		}
 	}
 }
