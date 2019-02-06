@@ -117,6 +117,7 @@ $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
             Illustrator = "16_cstm_print.ai"
             InDesign = "16DWT-cstm-print.idml"
             Scene7 = "16_cstm_print"
+            Scene7AR = "16_cstm_print_mark"
         }
         WhiteInkMask = "16oz_wrap_mask_black"
     }
