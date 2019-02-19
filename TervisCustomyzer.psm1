@@ -724,3 +724,8 @@ function Get-CustomyzerPrintImageTemplateSizeAndFormType {
     $Script:PrintImageTemplateNameToSizeAndFormTypeIndex.$PrintImageTemplateName |
     Select-Object -Property Size, @{N="FormType";e={$_.FormType | Select-Object -First 1}}
 }
+
+function Get-CustomyzerPrintImageTemplateScene7Name {
+	$Script:SizeAndFormTypeToImageTemplateNames.ImageTemplateName.Print.Scene7 +
+	$Script:SizeAndFormTypeToImageTemplateNames.ImageTemplateName.Print.Scene7AR
+}
