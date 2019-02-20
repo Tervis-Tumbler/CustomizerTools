@@ -675,7 +675,7 @@ function Get-CustomyzerWebToPrintImageFileName {
 function Get-CustomyzerImageTemplateName {
     param (
         [Parameter(Mandatory,ValueFromPipelineByPropertyName)]$Size,
-        [ValidateSet("SIP","SWG","WINE","WAV","DWT","DWT","MUG","BEER","DWT","WB")][Parameter(Mandatory,ValueFromPipelineByPropertyName)]$FormType,
+        [ValidateSet("SIP","SWG","WINE","WAV","DWT","DWT","MUG","BEER","DWT","WB","SS")][Parameter(Mandatory,ValueFromPipelineByPropertyName)]$FormType,
         [ValidateSet("Final","Mask","Vignette","Base","Print","FinalWithERPNumber","WhiteInkMask")][Parameter(Mandatory,ValueFromPipelineByPropertyName)]$TemplateType
     )
     DynamicParam {
