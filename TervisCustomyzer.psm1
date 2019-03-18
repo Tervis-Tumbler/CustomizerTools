@@ -14,15 +14,15 @@ function Get-CustomyzerEnvironment {
 
 	$Environment |
 	Add-Member -MemberType NoteProperty -Name CustomyzerDBConnectionString -Force -PassThru -Value (
-		Get-TervisPasswordstatePassword -Guid $Environment.CustomyzerDatabasePasswordStatePasswordGUID -PropertyMapName MSSQLDatabase -PasswordListID $Environment.PasswordListID |
+		Get-TervisPasswordstatePassword -Guid $Environment.CustomyzerDatabasePasswordStatePasswordGUID -PropertyMapName MSSQLDatabase |
 		ConvertTo-MSSQLConnectionString
 	) |
 	Add-Member -MemberType NoteProperty -Name EmailAddressToRecieveXLSX -Force -PassThru -Value (
-		Get-TervisPasswordstatePassword -Guid $Environment.EmailAddressToRecieveXLSXPasswordStatePasswordGUID -PasswordListID $Environment.PasswordListID |
+		Get-TervisPasswordstatePassword -Guid $Environment.EmailAddressToRecieveXLSXPasswordStatePasswordGUID |
 		Select-Object -ExpandProperty Password
 	) |
 	Add-Member -MemberType NoteProperty -Name FileShareAccount -Force -PassThru -Value (
-		Get-TervisPasswordstatePassword -Guid $Environment.FileShareAccountPasswordStateGUID -PasswordListID $Environment.PasswordListID -AsCredential
+		Get-TervisPasswordstatePassword -Guid $Environment.FileShareAccountPasswordStateGUID -AsCredential
 	)
 }
 
@@ -498,7 +498,7 @@ function Get-CustomyzerApprovalOrderDetail {
 	param(
 		[Parameter(ValueFromPipelineByPropertyName)]$OrderDetailID,
 		[Parameter(ValueFromPipelineByPropertyName)]$OrderID,
-		$ProjectID
+		[Parameter(ValueFromPipelineByPropertyName)]$ProjectID
 	)
 	process {
 		$SQLCommand = New-SQLSelect -SchemaName Approval -TableName OrderDetail -Parameters $PSBoundParameters
