@@ -30,7 +30,11 @@ function Set-CustomyzerModuleEnvironment {
     param (
         [Parameter(Mandatory)]$Name
 	)
-	$Script:Environment = Get-CustomyzerEnvironment -EnvironmentName $Name
+	if (-not (Test-Path -LiteralPath "$ModulePath\$Name.xml")) {
+		$Script:Environment = Get-CustomyzerEnvironment -EnvironmentName $Name
+	} else {
+		$Script:Environment = Import-Clixml -LiteralPath "$ModulePath\$Name.xml"
+	}
 }
 
 function Get-CustomyzerModuleEnvironment {
