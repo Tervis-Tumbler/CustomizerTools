@@ -35,10 +35,6 @@ $CustomyzerEnvionrments = [PSCustomObject]@{
 $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
     Size = 6
     FormType = "SIP"
-    # ArtBoardDimensions = [PSCustomObject]@{
-    #     Width = 
-    #     Height = 
-    # }
     PrintImageDimensions = [PSCustomObject]@{
         Width = 2605
         Height = 1051
