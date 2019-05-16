@@ -751,7 +751,7 @@ function Get-CustomyzerPrintImageTemplateScene7Name {
 	$Script:SizeAndFormTypeToImageTemplateNames.ImageTemplateName.Print.Scene7AR
 }
 
-function Get-CustomyzerImageTemplateName {
+function Get-CustomyzerImageTemplateNameAll {
 	$Script:SizeAndFormTypeToImageTemplateNames |
 	ForEach-Object {
 		$_.ImageTemplateName.Final
