@@ -694,11 +694,6 @@ function Get-CustomyzerWebToPrintImageFileName {
 }
 
 function Get-SizeAndFormTypeToImageTemplateNamesIndex {
-	param (
-        [Parameter(Mandatory,ValueFromPipelineByPropertyName)]$Size,
-		[ValidateSet("SIP","SWG","WINE","WAV","DWT","DWT","MUG","BEER","DWT","WB","SS")]
-		[Parameter(Mandatory,ValueFromPipelineByPropertyName)]$FormType
-	)
 	process {
 		if (-not $Script:SizeAndFormTypeToImageTemplateNamesIndex) {
             $Script:SizeAndFormTypeToImageTemplateNames |
