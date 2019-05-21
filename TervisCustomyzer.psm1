@@ -693,6 +693,28 @@ function Get-CustomyzerWebToPrintImageFileName {
     }
 }
 
+function Get-SizeAndFormTypeToImageTemplateNamesIndex {
+	param (
+        [Parameter(Mandatory,ValueFromPipelineByPropertyName)]$Size,
+		[ValidateSet("SIP","SWG","WINE","WAV","DWT","DWT","MUG","BEER","DWT","WB","SS")]
+		[Parameter(Mandatory,ValueFromPipelineByPropertyName)]$FormType
+	)
+	process {
+		if (-not $Script:SizeAndFormTypeToImageTemplateNamesIndex) {
+            $Script:SizeAndFormTypeToImageTemplateNames |
+            Add-Member -MemberType ScriptProperty -Name SizeAndFormTypes -Force -Value {
+                $This.FormType |
+                ForEach-Object -Process {
+                    "$($This.Size)$_"
+                }
+            }
+            $Script:SizeAndFormTypeToImageTemplateNamesIndex = $Script:SizeAndFormTypeToImageTemplateNames |
+            New-HashTableIndex -PropertyToIndex SizeAndFormTypes
+		}
+		$Script:SizeAndFormTypeToImageTemplateNamesIndex
+	}
+}
+
 function Get-CustomyzerImageTemplateName {
     param (
         [Parameter(Mandatory,ValueFromPipelineByPropertyName)]$Size,
@@ -705,24 +727,25 @@ function Get-CustomyzerImageTemplateName {
         }
     }
     process {
-        if (-not $Script:SizeAndFormTypeToImageTemplateNamesIndex) {
-            $Script:SizeAndFormTypeToImageTemplateNames |
-            Add-Member -MemberType ScriptProperty -Name SizeAndFormTypes -Force -Value {
-                $This.FormType |
-                ForEach-Object -Process {
-                    "$($This.Size)$_"
-                }
-            }
-            $Script:SizeAndFormTypeToImageTemplateNamesIndex = $Script:SizeAndFormTypeToImageTemplateNames |
-            New-HashTableIndex -PropertyToIndex SizeAndFormTypes
-        }
+        $SizeAndFormTypeToImageTemplateNamesIndex = Get-SizeAndFormTypeToImageTemplateNamesIndex
 
-        $Template = $Script:SizeAndFormTypeToImageTemplateNamesIndex."$Size$FormType".ImageTemplateName.$TemplateType
+        $Template = $SizeAndFormTypeToImageTemplateNamesIndex."$Size$FormType".ImageTemplateName.$TemplateType
         if (-not $PSBoundParameters.PrintTemplateType) {
             $Template
         } else {
             $Template."$($PSBoundParameters.PrintTemplateType)"
         }
+    }
+}
+
+function Get-CustomyzerSizeAndFormTypeMetaData {
+    param (
+        [Parameter(Mandatory,ValueFromPipelineByPropertyName)]$Size,
+        [Parameter(Mandatory,ValueFromPipelineByPropertyName)]$FormType
+    )
+    process {
+        $SizeAndFormTypeToImageTemplateNamesIndex = Get-SizeAndFormTypeToImageTemplateNamesIndex @PSBoundParameters
+        $SizeAndFormTypeToImageTemplateNamesIndex."$Size$FormType"
     }
 }
 
