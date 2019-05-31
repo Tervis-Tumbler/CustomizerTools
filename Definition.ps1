@@ -124,6 +124,11 @@ $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
         Width = 3084
         Height = 1873
     }
+    ProofMaskDimensions = [PSCustomObject]@{
+        VerticalBar = @{
+            Width = 30
+        }
+    }
     OrderNumberPosition = @{
         Wdith = 50
         Hegith = 1696
@@ -207,6 +212,14 @@ $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
     ArtBoardDimensions = [PSCustomObject]@{
         Width = 2965
         Height = 2219
+    }
+    ProofMaskDimensions = [PSCustomObject]@{
+        VerticalBar = @{
+            Width = 30
+        }
+        HorizontalBar = @{
+            Height = 90
+        }
     }
     OrderNumberPosition = @{
         Wdith = 50
