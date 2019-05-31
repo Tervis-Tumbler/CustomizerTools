@@ -35,6 +35,7 @@ $CustomyzerEnvionrments = [PSCustomObject]@{
 $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
     Size = 6
     FormType = "SIP"
+    #Matches design template after (CTRL+Click Dieline layer, crop) or (Image > Trim)
     PrintImageDimensions = [PSCustomObject]@{
         Width = 2605
         Height = 1051
@@ -62,6 +63,7 @@ $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
 [PSCustomObject]@{
     Size = 9
     FormType = "SWG","WINE"
+    #Matches design template after CTRL+Click Mask layer, invert selection, crop (does not match Image > Trim, 1874)
     PrintImageDimensions = [PSCustomObject]@{
         Width = 3260
         Height = 962
@@ -120,6 +122,7 @@ $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
         Width = 2717
         Height = 1750
     }
+    #Matches design template after CTRL+Click Mask layer, invert selection, crop (does not match Image > Trim, 1874)
     PrintImageDimensions = [PSCustomObject]@{
         Width = 3084
         Height = 1873
@@ -215,7 +218,7 @@ $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
     }
     ProofMaskDimensions = [PSCustomObject]@{
         VerticalBar = @{
-            Width = 30
+            Width = 54
         }
         HorizontalBar = @{
             Height = 90
