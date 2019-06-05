@@ -58,6 +58,7 @@ $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
             InDesign = "6SIP-cstm-print.idml"
             Scene7 = "6_cstm_print"
         }
+        DiecutterCalibrationCheckLine = "6SIPDiecutterCalibrationCheckLine"
     }
 },
 [PSCustomObject]@{
@@ -86,6 +87,7 @@ $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
             InDesign = "9WINE-cstm-print.idml"
             Scene7 = "9_cstm_print"
         }
+        DiecutterCalibrationCheckLine = "9WINEDiecutterCalibrationCheckLine"
     }
 },
 [PSCustomObject]@{
@@ -113,6 +115,7 @@ $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
             InDesign = "10WAV-cstm-print.idml"
             Scene7 = "10_cstm_print"
         }
+        DiecutterCalibrationCheckLine = "10WAVDiecutterCalibrationCheckLine"
     }
 },
 [PSCustomObject]@{
@@ -149,6 +152,7 @@ $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
             Scene7AR = "16_cstm_print_mark"
         }
         WhiteInkMask = "16oz_wrap_mask_black"
+        DiecutterCalibrationCheckLine = "16DWTDiecutterCalibrationCheckLine"
     }
 },
 [PSCustomObject]@{
@@ -176,6 +180,7 @@ $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
             InDesign = "16MUG-cstm-print.idml"
             Scene7 = "MUG_cstm_print"
         }
+        DiecutterCalibrationCheckLine = "16MUGDiecutterCalibrationCheckLine"
     }
 },
 [PSCustomObject]@{
@@ -203,6 +208,7 @@ $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
             InDesign = "16BEER-cstm-print.idml"
             Scene7 = "BEER_cstm_print"
         }
+        DiecutterCalibrationCheckLine = "16BEERDiecutterCalibrationCheckLine"
     }
 },
 [PSCustomObject]@{
@@ -238,6 +244,7 @@ $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
             InDesign = "24DWT-cstm-print.idml"
             Scene7 = "24_cstm_print"
         }
+        DiecutterCalibrationCheckLine = "24DWTDiecutterCalibrationCheckLine"
     }
 },
 [PSCustomObject]@{
@@ -265,6 +272,7 @@ $Script:SizeAndFormTypeToImageTemplateNames = [PSCustomObject]@{
             InDesign = "24WB-cstm-print.idml"
             Scene7 = "WB_cstm_print"
         }
+        DiecutterCalibrationCheckLine = "24WBDiecutterCalibrationCheckLine"
     }
 }   ,
 [PSCustomObject]@{

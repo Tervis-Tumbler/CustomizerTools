@@ -712,9 +712,15 @@ function Get-SizeAndFormTypeToImageTemplateNamesIndex {
 
 function Get-CustomyzerImageTemplateName {
     param (
-        [Parameter(Mandatory,ValueFromPipelineByPropertyName)]$Size,
-        [ValidateSet("SIP","SWG","WINE","WAV","DWT","DWT","MUG","BEER","DWT","WB","SS")][Parameter(Mandatory,ValueFromPipelineByPropertyName)]$FormType,
-        [ValidateSet("Final","Mask","Vignette","Base","Print","FinalWithERPNumber","WhiteInkMask")][Parameter(Mandatory,ValueFromPipelineByPropertyName)]$TemplateType
+		[Parameter(Mandatory,ValueFromPipelineByPropertyName)]$Size,
+		
+		[ValidateSet("SIP","SWG","WINE","WAV","DWT","DWT","MUG","BEER","DWT","WB","SS")]
+		[Parameter(Mandatory,ValueFromPipelineByPropertyName)]
+		$FormType,
+		
+		[ValidateSet("Final","Mask","Vignette","Base","Print","FinalWithERPNumber","WhiteInkMask","DiecutterCalibrationCheckLine")]
+		[Parameter(Mandatory,ValueFromPipelineByPropertyName)]
+		$TemplateType
     )
     DynamicParam {
         if ($TemplateType -eq "Print") {
