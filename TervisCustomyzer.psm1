@@ -693,6 +693,10 @@ function Get-CustomyzerWebToPrintImageFileName {
     }
 }
 
+function Get-SizeAndFormTypeToImageTemplateNames {
+	$Script:SizeAndFormTypeToImageTemplateNames
+}
+
 function Get-SizeAndFormTypeToImageTemplateNamesIndex {
 	process {
 		if (-not $Script:SizeAndFormTypeToImageTemplateNamesIndex) {

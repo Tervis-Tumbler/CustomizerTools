@@ -32,7 +32,7 @@ $CustomyzerEnvionrments = [PSCustomObject]@{
     ScheduledTaskRepetitionIntervalName = "EverWorkdayAt2PM"
 }
 
-$Script:SizeAndFormTypeToImageTemplateNames = Invoke-RestMethod -Uri https://unpkg.com/@tervis/terviscustomyzercontstants/SizeAndFormTypeMetadata.json
+$Script:SizeAndFormTypeToImageTemplateNames = Invoke-RestMethod -Uri https://unpkg.com/@tervis/terviscustomyzercontstants@0.1.3/SizeAndFormTypeMetadata.json
 
 $TestCases = @(
     @{
