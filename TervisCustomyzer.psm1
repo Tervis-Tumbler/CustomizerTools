@@ -697,6 +697,17 @@ function Get-SizeAndFormTypeToImageTemplateNames {
 	$Script:SizeAndFormTypeToImageTemplateNames
 }
 
+function Get-SizeAndFormType {
+	foreach ($SizeAndFormTypeToImageTemplateName in $Script:SizeAndFormTypeToImageTemplateNames) {
+		foreach ($FormType in $SizeAndFormTypeToImageTemplateName.FormType) {
+			[PSCustomObject]@{
+				Size = $SizeAndFormTypeToImageTemplateName.Size
+				FormType = $FormType
+			}
+		}
+	}
+}
+
 function Get-SizeAndFormTypeToImageTemplateNamesIndex {
 	process {
 		if (-not $Script:SizeAndFormTypeToImageTemplateNamesIndex) {
