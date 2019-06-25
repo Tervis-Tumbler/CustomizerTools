@@ -786,8 +786,10 @@ function Get-CustomyzerPrintImageTemplateSizeAndFormType {
 }
 
 function Get-CustomyzerPrintImageTemplateScene7Name {
-	$Script:SizeAndFormTypeToImageTemplateNames.ImageTemplateName.Print.Scene7 +
-	$Script:SizeAndFormTypeToImageTemplateNames.ImageTemplateName.Print.Scene7AR
+	(
+		$Script:SizeAndFormTypeToImageTemplateNames.ImageTemplateName.Print.Scene7 +
+		$Script:SizeAndFormTypeToImageTemplateNames.ImageTemplateName.Print.Scene7AR
+	) | Where-Object -FilterScript {$_}
 }
 
 function Get-CustomyzerImageTemplateNameAll {
