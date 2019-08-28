@@ -531,6 +531,20 @@ function Get-CustomyzerProject_ARAsset {
 	}
 }
 
+function Get-CustomyzerProject_Asset {
+	param (
+		[Parameter(ValueFromPipelineByPropertyName)]$ProjectID
+	)
+	process {
+		$SQLCommand = New-SQLSelect -TableName Project_Asset -Parameters $PSBoundParameters
+
+		Invoke-CustomyzerSQL -SQLCommand $SQLCommand |
+		Add-TervisMember -MemberType ScriptProperty -Name Project -Force -PassThru -CacheValue -Value {
+			$This | Get-CustomyzerProject
+		}
+	}
+}
+
 function Get-CustomyzerProject {
 	param(
 		[Parameter(ValueFromPipelineByPropertyName)][GUID]$ProjectID
@@ -572,6 +586,12 @@ function Get-CustomyzerProject {
 		} |
 		Add-TervisMember -MemberType ScriptProperty -Name Project_ARAssetID -Force -PassThru -CacheValue -Value {
 			$This | Get-CustomyzerProject_ARAsset
+		} |
+		Add-TervisMember -MemberType ScriptProperty -Name Project_AssetID -Force -PassThru -CacheValue -Value {
+			$This | Get-CustomyzerProject_Asset
+		} |
+		Add-TervisMember -MemberType ScriptProperty -Name Background -Force -PassThru -CacheValue -Value {
+			$This | Get-CustomyzerBackground
 		}
 	}
 }
