@@ -460,18 +460,40 @@ Where [CreatedDateUTC] > '$((Get-Date).AddDays(-14).ToString("yyyy-MM-dd"))'
 function Get-CustomyzerApprovalPackList {
 	param (
 		[Switch]$NotInBatch,
-		$BatchNumber
+		$BatchNumber,
+		$SiteCodeID
 	)
 
 	if ($NotInBatch) {
-		$ArbitraryWherePredicateParameter = @{
-			ArbitraryWherePredicate = @"
+		$ArbitraryWherePredicate += @"
 			AND Approval.PackList.BatchNumber IS NULL
 			AND Approval.PackList.SentDateUTC IS NULL
 "@
-		}
 	}
+
+	if ($SiteCodeID) {
+		$ArbitraryWherePredicate += @"
+		AND [Approval].[PackList].PackListID in (
+			select 
+			[Approval].[PackList].PackListID
+			from
+			[Approval].[PackList] (nolock) 
+			join
+			[Approval].[OrderDetail] (nolock) on [Approval].[OrderDetail].OrderDetailID = [Approval].[PackList].OrderDetailID
+			join
+			[dbo].[Project] (nolock) on [Approval].[OrderDetail].ProjectID = [dbo].[Project].ProjectID
+			where
+			[dbo].[Project].[SiteCodeID] = $SiteCodeID
+		)
+"@
+	}
+
+	$ArbitraryWherePredicateParameter = @{
+		ArbitraryWherePredicate = $ArbitraryWherePredicate
+	}
+
 	$PSBoundParameters.Remove("NotInBatch") | Out-Null
+	$PSBoundParameters.Remove("SiteCodeID") | Out-Null
 
 	$SQLCommand = New-SQLSelect -SchemaName Approval -TableName PackList @ArbitraryWherePredicateParameter -Parameters $PSBoundParameters
 
