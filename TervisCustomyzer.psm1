@@ -483,7 +483,7 @@ function Get-CustomyzerApprovalPackList {
 			join
 			[dbo].[Project] (nolock) on [Approval].[OrderDetail].ProjectID = [dbo].[Project].ProjectID
 			where
-			[dbo].[Project].[SiteCodeID] = $SiteCodeID
+			[dbo].[Project].[SiteCodeID] in ($($SiteCodeID -join ","))
 		)
 "@
 	}
