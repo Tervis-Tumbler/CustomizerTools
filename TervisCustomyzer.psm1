@@ -606,10 +606,10 @@ function Get-CustomyzerProject {
 		Add-TervisMember -MemberType ScriptProperty -Name OrderDetail -Force -PassThru -CacheValue -Value {
 			$This | Get-CustomyzerApprovalOrderDetail
 		} |
-		Add-TervisMember -MemberType ScriptProperty -Name Project_ARAssetID -Force -PassThru -CacheValue -Value {
+		Add-TervisMember -MemberType ScriptProperty -Name Project_ARAsset -Force -PassThru -CacheValue -Value {
 			$This | Get-CustomyzerProject_ARAsset
 		} |
-		Add-TervisMember -MemberType ScriptProperty -Name Project_AssetID -Force -PassThru -CacheValue -Value {
+		Add-TervisMember -MemberType ScriptProperty -Name Project_Asset -Force -PassThru -CacheValue -Value {
 			$This | Get-CustomyzerProject_Asset
 		} |
 		Add-TervisMember -MemberType ScriptProperty -Name Background -Force -PassThru -CacheValue -Value {
